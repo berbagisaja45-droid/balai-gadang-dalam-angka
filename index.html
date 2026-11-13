@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <style>
     :root{--ink:#17352e;--muted:#71817a;--green:#176b50;--green2:#e7f2ec;--line:#e5ece7;--paper:#f6f8f5;--white:#fff;--gold:#d8a84e}
     *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:"DM Sans",sans-serif}
@@ -30,6 +31,11 @@
     .two{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}.barrow{display:grid;grid-template-columns:105px 1fr 35px;gap:10px;align-items:center;margin:15px 0;font-size:11px;color:#5e7068}
     .track{height:8px;border-radius:10px;background:#edf2ee;overflow:hidden}.fill{height:100%;background:#3a9470;border-radius:10px;width:0}
     .placeholder{height:190px;border:1px dashed #cbd9d0;border-radius:12px;display:grid;place-items:center;text-align:center;color:#84938b;font-size:12px;padding:20px;line-height:1.6}
+
+    #bg-map{height:520px;width:100%;border-radius:12px;z-index:1}
+    .map-status{font-size:11px;color:var(--muted);line-height:1.6;margin-top:10px}
+    .map-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:#5e7068}
+    .legend-line{display:inline-block;width:20px;height:3px;background:#176b50;vertical-align:middle;margin-right:6px}
     .mapbox{height:300px;border-radius:12px;overflow:hidden;background:#edf3ef;display:grid;place-items:center;text-align:center;color:#73847a;padding:20px;font-size:12px}
     .tablewrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:#fff}table{width:100%;border-collapse:collapse;min-width:600px}th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);font-size:11px}th{background:#f7faf7;color:#66786e;font-weight:700}td{color:#304a40}.status{display:inline-block;background:#edf5ef;color:#337554;padding:4px 8px;border-radius:20px;font-size:10px}
     .actions{display:flex;gap:9px;flex-wrap:wrap}.btn{border:0;background:var(--green);color:#fff;padding:10px 14px;border-radius:9px;font-weight:700;font-size:11px;cursor:pointer}.btn.secondary{background:#edf4ef;color:var(--green);border:1px solid #d8e6dc}
@@ -194,13 +200,18 @@
       <div class="note" style="margin-top:13px">Data lingkungan ditampilkan berdasarkan hasil pemetaan dan pemantauan yang memiliki sumber, tanggal pengukuran, serta status verifikasi. Integrasi tidak mengubah atau menghapus modul pada aplikasi Android Balai Gadang Carbon.</div>
     </section>
     <section id="peta"><div class="section-head"><div><h2>Peta Digital Balai Gadang</h2><div class="sub">Sebaran rumah kost, fasilitas, UMKM, dan area pemantauan karbon</div></div></div>
-      <div class="mapbox">Peta GIS akan dihubungkan ke layanan peta Balai Gadang Carbon.<br>Layer publik hanya menampilkan lokasi yang telah disetujui untuk dipublikasikan.</div>
+      <div class="card">
+        <div id="bg-map" role="application" aria-label="Peta interaktif Kelurahan Balai Gadang"></div>
+        <div class="map-legend"><span><i class="legend-line"></i> Batas referensi administrasi</span><span>Basemap: OpenStreetMap</span></div>
+        <div class="map-status" id="map-status">Memuat peta dasar dan mencoba mengambil geometri batas referensi dari layanan Badan Informasi Geospasial…</div>
+      </div>
+      <div class="note" style="margin-top:12px">Catatan: layer batas yang dicoba dimuat berasal dari layanan BIG edisi 2020 dan bersifat referensi kartografis, bukan pengganti dokumen penetapan batas terbaru Pemerintah Kota Padang. Titik fasilitas belum ditampilkan karena koordinat fasilitas yang telah diverifikasi dan disetujui untuk publikasi belum tersedia.</div>
     </section>
     <div class="section-head"><div><h2>Sumber & Metadata</h2><div class="sub">Transparansi dan kualitas data</div></div></div>
     <div class="card"><div class="sub" style="line-height:1.8">Setiap indikator idealnya mencantumkan sumber data, tahun/periode, tanggal pembaruan, satuan, metode pengumpulan, dan status verifikasi. Data administratif dapat bersumber dari kelurahan; data statistik dari BPS; data kost dan UMKM dari pendataan lapangan; data lingkungan dari Balai Gadang Carbon.</div><div id="connection" style="margin-top:12px">Mode tampilan: prototipe. Konfigurasi Supabase belum diisi.</div></div>
   </main>
   <footer><div class="wrap foot"><div><b>Balai Gadang Dalam Angka</b><div style="margin-top:5px;opacity:.8">Platform data wilayah dan pembangunan berkelanjutan.</div></div><div>Bagian dari ekosistem Balai Gadang Digital<br>© 2026 · Kelurahan Balai Gadang, Kota Padang</div></div></footer>
-  <script src="config.js"></script><script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>\n  <script src="config.js"></script><script>
     const fmt = n => n == null ? "—" : Number(n).toLocaleString("id-ID");
     function setText(id,v,suffix=""){const el=document.getElementById(id);if(el)el.textContent=v==null?"—":fmt(v)+suffix;}
     async function loadPortal(){
@@ -220,26 +231,76 @@
         document.getElementById("connection").textContent="Terhubung ke database. Angka yang tampil mengikuti data yang telah dipublikasikan dan diverifikasi.";
       }catch(e){document.getElementById("connection").textContent="Database belum siap atau kebijakan akses belum dikonfigurasi: "+(e.message||"periksa konfigurasi Supabase");}
     }
-    // Sinkronkan menu aktif dengan bagian halaman yang sedang terlihat.
+    // Sinkronisasi menu aktif berdasarkan posisi scroll dan hash URL.
     const navLinks = [...document.querySelectorAll("nav a[href^='#']")];
-    const navTargets = navLinks
+    const navSections = navLinks
       .map(link => document.querySelector(link.getAttribute("href")))
       .filter(Boolean);
-    if ("IntersectionObserver" in window) {
-      const navObserver = new IntersectionObserver(entries => {
-        const visible = entries
-          .filter(entry => entry.isIntersecting)
-          .sort((a,b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (!visible) return;
-        navLinks.forEach(link => {
-          const isActive = link.getAttribute("href") === "#" + visible.target.id;
-          link.classList.toggle("active", isActive);
-          if (isActive) link.setAttribute("aria-current", "location");
-          else link.removeAttribute("aria-current");
-        });
-      }, { rootMargin: "-20% 0px -65% 0px", threshold: [0, 0.1, 0.25, 0.5] });
-      navTargets.forEach(target => navObserver.observe(target));
+
+    function updateActiveNav() {
+      const marker = window.scrollY + 125;
+      let current = navSections[0];
+      for (const section of navSections) {
+        if (section.getBoundingClientRect().top + window.scrollY <= marker) {
+          current = section;
+        }
+      }
+      navLinks.forEach(link => {
+        const active = current && link.getAttribute("href") === "#" + current.id;
+        link.classList.toggle("active", Boolean(active));
+        if (active) link.setAttribute("aria-current", "location");
+        else link.removeAttribute("aria-current");
+      });
     }
-    document.getElementById("year").addEventListener("change",loadPortal);loadPortal();
+    window.addEventListener("scroll", updateActiveNav, { passive: true });
+    window.addEventListener("hashchange", updateActiveNav);
+    window.addEventListener("resize", updateActiveNav);
+    window.addEventListener("load", updateActiveNav);
+    updateActiveNav();
+
+    document.getElementById("year").addEventListener("change",loadPortal);loadPortal();\n
+    // Peta interaktif: batas referensi BIG (2020). Tidak membuat titik fasilitas fiktif.
+    (function initBalaiGadangMap(){
+      const mapEl = document.getElementById("bg-map");
+      const statusEl = document.getElementById("map-status");
+      if (!mapEl || !window.L) {
+        if (statusEl) statusEl.textContent = "Peta belum dapat dimuat. Periksa koneksi internet atau pemuatan pustaka peta.";
+        return;
+      }
+      const map = L.map(mapEl).setView([-0.80, 100.35], 11);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      }).addTo(map);
+
+      const boundaryQuery = "https://geoservices.big.go.id/gis/rest/services/PKLP/BatasWilayah/MapServer/1/query";
+      const params = new URLSearchParams({
+        where: "WADMKD='Balai Gadang' AND WADMKC='Koto Tangah'",
+        outFields: "NAMOBJ,WADMKD,WADMKC,WADMKK,WADMPR,LUASWH,UUPP",
+        returnGeometry: "true",
+        outSR: "4326",
+        f: "geojson"
+      });
+      fetch(boundaryQuery + "?" + params.toString())
+        .then(response => {
+          if (!response.ok) throw new Error("Layanan batas tidak merespons (HTTP " + response.status + ").");
+          return response.json();
+        })
+        .then(data => {
+          if (!data || !Array.isArray(data.features) || data.features.length === 0) {
+            throw new Error("Objek Balai Gadang tidak ditemukan pada layer referensi BIG. Batas tidak digambar agar tidak menampilkan geometri yang keliru.");
+          }
+          const boundary = L.geoJSON(data, {
+            style: { color: "#176b50", weight: 3, fillColor: "#3a9470", fillOpacity: 0.12 }
+          }).addTo(map);
+          map.fitBounds(boundary.getBounds(), { padding: [18, 18] });
+          statusEl.textContent = "Batas referensi berhasil dimuat dari layanan BIG. Tahun data layer: 2020. Mohon cocokkan dengan peta/dokumen batas terbaru Pemerintah Kota Padang sebelum digunakan sebagai batas legal.";
+        })
+        .catch(error => {
+          statusEl.textContent = "Peta dasar tersedia, tetapi batas referensi belum berhasil dimuat: " + error.message + " Tidak ada batas atau titik fasilitas yang direkayasa.";
+        });
+      setTimeout(() => map.invalidateSize(), 250);
+    })();
+
   </script>
 </body></html>
