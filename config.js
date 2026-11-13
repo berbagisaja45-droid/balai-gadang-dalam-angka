@@ -1,6 +1,6 @@
-// Isi dengan Project URL dan anon/publishable key dari project Supabase BARU.
-// Jangan pernah menaruh service_role key di browser atau repository.
+
 window.BG_CONFIG = {
-  url: "",
-  anonKey: ""
+  url: "https://txcbdjrrrfrzddezmcbf.supabase.co",
+  anonKey: "sb_publishable_5f2QTGnej-z4l8CaQUJFhg_OQxP1yuJ"
 };
+
