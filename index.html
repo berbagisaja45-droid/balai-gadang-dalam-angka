@@ -20,6 +20,7 @@
     .meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}.chip{border:1px solid #ffffff45;padding:7px 11px;border-radius:30px;font-size:11px;color:#e7f3ec}
     nav{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}.navin{display:flex;gap:6px;overflow:auto;padding-top:10px;padding-bottom:10px}
     nav a{color:#5e7068;text-decoration:none;padding:10px 13px;border-radius:9px;white-space:nowrap;font-size:12px;font-weight:600}nav a.active,nav a:hover{background:var(--green2);color:var(--green)}
+    html{scroll-behavior:smooth;scroll-padding-top:76px}section[id],.section-head[id]{scroll-margin-top:76px}
     main{padding:26px 0 56px}.section-head{display:flex;justify-content:space-between;align-items:end;gap:15px;margin:26px 0 14px}
     h2{font:800 20px Manrope;margin:0;letter-spacing:-.4px}.sub{color:var(--muted);font-size:12px;margin-top:5px}
     .year{border:1px solid var(--line);background:#fff;padding:9px 12px;border-radius:9px;color:var(--ink);font:600 12px "DM Sans"}
@@ -47,17 +48,129 @@
     <p class="lead">Mengenal wilayah melalui data. Portal statistik terpadu untuk melihat perkembangan penduduk, ekonomi lokal, rumah kost, fasilitas, dan kondisi lingkungan Balai Gadang.</p>
     <div class="meta"><span class="chip">◉ Data wilayah</span><span class="chip">▦ Statistik tahunan</span><span class="chip">⌖ Peta digital</span></div>
   </div></header>
-  <nav><div class="wrap navin">
-    <a class="active" href="#ringkasan">Ringkasan</a><a href="#demografi">Demografi</a><a href="#kost">Rumah Kost</a><a href="#ekonomi">Ekonomi</a><a href="#fasilitas">Fasilitas</a><a href="#lingkungan">Lingkungan</a><a href="#peta">Peta Digital</a>
-  </div></nav>
+  
+<nav aria-label="Navigasi utama">
+  <div class="wrap navin">
+    <a class="active" href="#ringkasan">Ringkasan</a>
+    <a href="#profil">Profil Kelurahan</a>
+    <a href="#demografi">Demografi</a>
+    <a href="#kost">Rumah Kost</a>
+    <a href="#ekonomi">Ekonomi</a>
+    <a href="#fasilitas">Fasilitas</a>
+    <a href="#lingkungan">Lingkungan</a>
+    <a href="#peta">Peta Digital</a>
+  </div>
+</nav>
+
   <main class="wrap">
-    <div class="section-head" id="ringkasan"><div><h2>Ringkasan Wilayah</h2><div class="sub">Indikator utama Kelurahan Balai Gadang</div></div><select class="year" id="year"><option value="2026">Tahun 2026</option><option value="2025">Tahun 2025</option><option value="2024">Tahun 2024</option><option value="2023">Tahun 2023</option></select></div>
+<div class="section-head" id="ringkasan"><div><h2>Ringkasan Wilayah</h2><div class="sub">Indikator utama Kelurahan Balai Gadang</div></div><select class="year" id="year"><option value="2026">Tahun 2026</option><option value="2025">Tahun 2025</option><option value="2024">Tahun 2024</option><option value="2023">Tahun 2023</option></select></div>
     <div class="grid">
       <div class="card"><span class="metric-icon">♙</span><div class="metric-label">Jumlah penduduk</div><div class="metric" id="population">—</div><div class="metric-note">jiwa · data terverifikasi</div></div>
       <div class="card"><span class="metric-icon">⌂</span><div class="metric-label">Kepala keluarga</div><div class="metric" id="households">—</div><div class="metric-note">KK · data terverifikasi</div></div>
       <div class="card"><span class="metric-icon">▤</span><div class="metric-label">Rumah kost</div><div class="metric" id="kosts">—</div><div class="metric-note">unit bangunan terdata</div></div>
       <div class="card"><span class="metric-icon">▣</span><div class="metric-label">Kamar kost</div><div class="metric" id="rooms">—</div><div class="metric-note">kamar tersedia</div></div>
     </div>
+
+    <section id="profil">
+  <div class="section-head">
+    <div>
+      <h2>Profil Kelurahan Balai Gadang</h2>
+      <div class="sub">Mengenal sejarah, wilayah, masyarakat, dan potensi Balai Gadang</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Pengantar</h3>
+    <p style="line-height:1.9">
+      Balai Gadang merupakan salah satu kelurahan di Kecamatan Koto Tangah,
+      Kota Padang, Provinsi Sumatera Barat. Wilayah ini memiliki karakter
+      geografis, sosial, ekonomi, dan lingkungan yang beragam. Portal
+      Balai Gadang Dalam Angka disusun sebagai sarana informasi untuk
+      mengenal perkembangan wilayah melalui data dan dokumentasi.
+    </p>
+  </div>
+
+  <div class="two" style="margin-top:14px">
+
+    <div class="card">
+      <h3>1. Sejarah Singkat</h3>
+      <p class="sub" style="line-height:1.9">
+        Catatan awal monografi menyebutkan bahwa pembentukan Kelurahan
+        Balai Gadang berkaitan dengan penggabungan wilayah administratif
+        terdahulu, antara lain Beringin, Air Dingin, Tanjung Aur, dan
+        Sungai Bangek. Sejarah nama Balai Gadang, tahun pembentukan,
+        serta dasar hukum penggabungannya masih perlu ditelusuri melalui
+        arsip pemerintahan dan wawancara dengan tokoh masyarakat serta
+        tokoh adat.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>2. Letak Geografis dan Batas Wilayah</h3>
+      <p class="sub" style="line-height:1.9">
+        Balai Gadang terletak di Kecamatan Koto Tangah, bagian utara
+        Kota Padang. Publikasi statistik kecamatan yang menjadi bahan
+        awal mencatat luas wilayah sekitar 106,90 km². Batas administratif
+        dan luas wilayah akan disesuaikan dengan peta resmi terbaru
+        Pemerintah Kota Padang.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>3. Kondisi Topografi dan Lingkungan</h3>
+      <p class="sub" style="line-height:1.9">
+        Bentang alam Balai Gadang mencakup kawasan permukiman, lahan
+        pertanian, perkebunan, kawasan perbukitan, dan vegetasi alami.
+        Kondisi topografi, elevasi, kemiringan lereng, jaringan sungai,
+        serta tutupan lahan akan dikembangkan melalui pemetaan GIS
+        dan pengumpulan data lapangan.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>4. Pembagian Wilayah Administrasi</h3>
+      <p class="sub" style="line-height:1.9">
+        Pembagian wilayah administrasi menjadi dasar penyusunan data
+        kependudukan dan pelayanan publik. Catatan awal menyebutkan
+        14 RW dan 58 RT, sementara sumber lain mencatat 59 RT.
+        Daftar RW dan RT beserta peta wilayahnya akan ditampilkan
+        setelah dikonfirmasi kepada pemerintah kelurahan.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>5. Karakteristik Sosial dan Ekonomi</h3>
+      <p class="sub" style="line-height:1.9">
+        Kehidupan masyarakat Balai Gadang tumbuh dalam lingkungan
+        sosial Minangkabau yang memiliki tradisi kekerabatan, kehidupan
+        keagamaan, dan gotong royong. Aktivitas ekonomi masyarakat
+        meliputi perdagangan, jasa, UMKM, pertanian, perkebunan,
+        serta berbagai kegiatan produktif lainnya.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>6. Potensi Wilayah dan Arah Pengembangan</h3>
+      <p class="sub" style="line-height:1.9">
+        Potensi Balai Gadang mencakup pengembangan pertanian dan
+        agroforestri, wisata alam dan budaya, penguatan UMKM,
+        peningkatan infrastruktur, serta pelestarian lingkungan.
+        Pengembangan basis data digital diharapkan mendukung
+        perencanaan pembangunan berbasis bukti dan kolaborasi
+        antara pemerintah, masyarakat, akademisi, dan pelaku usaha.
+      </p>
+    </div>
+
+  </div>
+
+  <div class="note" style="margin-top:14px">
+    Catatan: Profil ini merupakan draf awal. Informasi sejarah,
+    batas wilayah, luas, topografi, serta jumlah RT/RW perlu
+    diverifikasi menggunakan dokumen resmi sebelum ditetapkan
+    sebagai informasi final.
+  </div>
+</section>
+
     <section id="demografi"><div class="section-head"><div><h2>Demografi</h2><div class="sub">Struktur penduduk dan rumah tangga</div></div></div>
       <div class="two"><div class="card"><b style="font:700 13px Manrope">Komposisi kelompok umur</b><div class="sub">Proporsi penduduk menurut kelompok usia</div><div id="age-bars"><div class="placeholder">Grafik akan tampil setelah data demografi dimasukkan dan diverifikasi.</div></div></div>
       <div class="card"><b style="font:700 13px Manrope">Profil kependudukan</b><div class="sub">Indikator tahun terpilih</div><div class="placeholder">Belum ada data demografi terverifikasi.<br>Data kosong tidak ditampilkan sebagai angka nol.</div></div></div>
@@ -106,6 +219,26 @@
         const {data:env}=await db.from("v_lingkungan_publik").select("*").eq("tahun",year).maybeSingle();if(env){setText("tree-cover",env.tutupan_pohon_ha);setText("agroforestry",env.agroforestri_ha);setText("carbon",env.stok_karbon_tco2e);setText("plots",env.jumlah_petak);}
         document.getElementById("connection").textContent="Terhubung ke database. Angka yang tampil mengikuti data yang telah dipublikasikan dan diverifikasi.";
       }catch(e){document.getElementById("connection").textContent="Database belum siap atau kebijakan akses belum dikonfigurasi: "+(e.message||"periksa konfigurasi Supabase");}
+    }
+    // Sinkronkan menu aktif dengan bagian halaman yang sedang terlihat.
+    const navLinks = [...document.querySelectorAll("nav a[href^='#']")];
+    const navTargets = navLinks
+      .map(link => document.querySelector(link.getAttribute("href")))
+      .filter(Boolean);
+    if ("IntersectionObserver" in window) {
+      const navObserver = new IntersectionObserver(entries => {
+        const visible = entries
+          .filter(entry => entry.isIntersecting)
+          .sort((a,b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (!visible) return;
+        navLinks.forEach(link => {
+          const isActive = link.getAttribute("href") === "#" + visible.target.id;
+          link.classList.toggle("active", isActive);
+          if (isActive) link.setAttribute("aria-current", "location");
+          else link.removeAttribute("aria-current");
+        });
+      }, { rootMargin: "-20% 0px -65% 0px", threshold: [0, 0.1, 0.25, 0.5] });
+      navTargets.forEach(target => navObserver.observe(target));
     }
     document.getElementById("year").addEventListener("change",loadPortal);loadPortal();
   </script>
