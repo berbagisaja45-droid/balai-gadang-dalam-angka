@@ -1,279 +1,112 @@
 <!doctype html>
 <html lang="id">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Balai Gadang Dalam Angka</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-<style>
-:root{--ink:#17352e;--muted:#71817a;--green:#176b50;--green2:#e7f2ec;--line:#e5ece7;--paper:#f6f8f5;--gold:#d8a84e}
-*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:"DM Sans",sans-serif}
-.top{background:#103e32;color:#fff;padding:12px max(22px,calc((100vw - 1180px)/2));display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:12px}
-.top span{opacity:.82}.wrap{max-width:1180px;margin:auto;padding:0 22px}
-header{background:linear-gradient(120deg,#164d3d,#1c7555);color:#fff;padding:34px 0 30px}
-.brand{display:flex;align-items:center;gap:12px;margin-bottom:28px}.mark{width:42px;height:42px;border:1px solid #ffffff65;border-radius:13px;display:grid;place-items:center;font-size:22px}
-.brand b{font:700 15px Manrope}.brand small{display:block;color:#c9e0d4;font-size:11px;margin-top:2px}
-h1{font:800 clamp(30px,5vw,48px) Manrope;margin:0;letter-spacing:-1.5px}.lead{color:#d5e8de;max-width:650px;line-height:1.7;margin:12px 0 0;font-size:14px}
-.meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}.chip{border:1px solid #ffffff45;padding:7px 11px;border-radius:30px;font-size:11px;color:#e7f3ec}
-nav{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}.navin{display:flex;gap:6px;overflow:auto;padding-top:10px;padding-bottom:10px}
-nav a{color:#5e7068;text-decoration:none;padding:10px 13px;border-radius:9px;white-space:nowrap;font-size:12px;font-weight:600}nav a.active,nav a:hover{background:var(--green2);color:var(--green)}
-html{scroll-behavior:smooth;scroll-padding-top:76px}section[id],.section-head[id]{scroll-margin-top:76px}
-main{padding:26px 0 56px}.section-head{display:flex;justify-content:space-between;align-items:end;gap:15px;margin:26px 0 14px}
-h2{font:800 20px Manrope;margin:0;letter-spacing:-.4px}.sub{color:var(--muted);font-size:12px;margin-top:5px}
-.year{border:1px solid var(--line);background:#fff;padding:9px 12px;border-radius:9px;color:var(--ink);font:600 12px "DM Sans"}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:13px}.card{background:#fff;border:1px solid var(--line);border-radius:15px;padding:17px;min-width:0}
-.metric-label{font-size:11px;color:var(--muted);font-weight:600}.metric{font:800 27px Manrope;margin:10px 0 3px;letter-spacing:-1px}.metric-note{font-size:10px;color:#8a9991}
-.metric-icon{float:right;width:33px;height:33px;border-radius:10px;background:var(--green2);display:grid;place-items:center;color:var(--green);font-size:16px}
-.two{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}.placeholder{height:190px;border:1px dashed #cbd9d0;border-radius:12px;display:grid;place-items:center;text-align:center;color:#84938b;font-size:12px;padding:20px;line-height:1.6}
-#bg-map{height:520px;width:100%;border-radius:12px;z-index:1}.map-status{font-size:11px;color:var(--muted);line-height:1.6;margin-top:10px}
-.map-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:#5e7068}.legend-line{display:inline-block;width:20px;height:3px;background:#176b50;vertical-align:middle;margin-right:6px}
-.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:#fff}table{width:100%;border-collapse:collapse;min-width:600px}th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);font-size:11px}th{background:#f7faf7;color:#66786e;font-weight:700}td{color:#304a40}
-.status{display:inline-block;background:#edf5ef;color:#337554;padding:4px 8px;border-radius:20px;font-size:10px}
-.actions{display:flex;gap:9px;flex-wrap:wrap}.btn{border:0;background:var(--green);color:#fff;padding:10px 14px;border-radius:9px;font-weight:700;font-size:11px;cursor:pointer}.btn.secondary{background:#edf4ef;color:var(--green);border:1px solid #d8e6dc}
-.note{border-left:3px solid var(--gold);background:#fff9ec;padding:12px 14px;border-radius:0 9px 9px 0;color:#79633b;font-size:11px;line-height:1.6}
-footer{background:#103e32;color:#d9e9e0;padding:25px 0;font-size:11px}.foot{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
-.muted{color:var(--muted)}#connection{font-size:10px;color:#d4e9dd}
-.official-slider{position:relative;display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:12px;align-items:center}
-.official-frame{background:#f8faf8;border:1px solid var(--line);border-radius:16px;padding:16px;display:grid;grid-template-columns:minmax(130px,220px) 1fr;gap:20px;align-items:center;min-height:260px}
-.official-frame img{width:100%;height:230px;object-fit:cover;object-position:center 20%;border-radius:12px;background:#e9efeb}
-.official-name{font:800 20px Manrope;margin:0 0 7px}.official-role{color:var(--green);font-weight:700;font-size:13px}.official-note{font-size:11px;color:var(--muted);line-height:1.7;margin-top:12px}
-.slider-btn{border:1px solid var(--line);background:#fff;border-radius:50%;width:40px;height:40px;font-size:22px;color:var(--green);cursor:pointer}
-.slider-dots{display:flex;justify-content:center;gap:7px;margin-top:14px}.slider-dot{width:8px;height:8px;border:0;border-radius:50%;background:#cbd8d0;padding:0}.slider-dot.active{background:var(--green);width:22px;border-radius:9px}
-@media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}.top{padding-left:18px;padding-right:18px}}
-@media(max-width:560px){.official-frame{grid-template-columns:1fr;text-align:center}.official-frame img{height:250px;max-width:230px;margin:auto}.official-slider{grid-template-columns:32px minmax(0,1fr) 32px;gap:5px}.slider-btn{width:30px;height:30px;font-size:18px}.wrap{padding:0 15px}}
-@media(max-width:460px){.grid{gap:8px}.card{padding:13px}.metric{font-size:23px}.section-head{align-items:start;flex-direction:column}}
-</style>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Portal statistik demografi, ekonomi, hunian, dan lingkungan Kelurahan Balai Gadang, Padang.">
+  <title>Balai Gadang Dalam Angka</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{--ink:#17352e;--muted:#71817a;--green:#176b50;--green2:#e7f2ec;--line:#e5ece7;--paper:#f6f8f5;--white:#fff;--gold:#d8a84e}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:"DM Sans",sans-serif}
+    .top{background:#103e32;color:#fff;padding:12px max(22px,calc((100vw - 1180px)/2));display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:12px}
+    .top span{opacity:.82}.wrap{max-width:1180px;margin:auto;padding:0 22px}
+    header{background:linear-gradient(120deg,#164d3d,#1c7555);color:#fff;padding:34px 0 30px}
+    .brand{display:flex;align-items:center;gap:12px;margin-bottom:28px}.mark{width:42px;height:42px;border:1px solid #ffffff65;border-radius:13px;display:grid;place-items:center;font-size:22px}
+    .brand b{font:700 15px Manrope}.brand small{display:block;color:#c9e0d4;font-size:11px;margin-top:2px}
+    h1{font:800 clamp(30px,5vw,48px) Manrope;margin:0;letter-spacing:-1.5px}.lead{color:#d5e8de;max-width:650px;line-height:1.7;margin:12px 0 0;font-size:14px}
+    .meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}.chip{border:1px solid #ffffff45;padding:7px 11px;border-radius:30px;font-size:11px;color:#e7f3ec}
+    nav{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}.navin{display:flex;gap:6px;overflow:auto;padding-top:10px;padding-bottom:10px}
+    nav a{color:#5e7068;text-decoration:none;padding:10px 13px;border-radius:9px;white-space:nowrap;font-size:12px;font-weight:600}nav a.active,nav a:hover{background:var(--green2);color:var(--green)}
+    main{padding:26px 0 56px}.section-head{display:flex;justify-content:space-between;align-items:end;gap:15px;margin:26px 0 14px}
+    h2{font:800 20px Manrope;margin:0;letter-spacing:-.4px}.sub{color:var(--muted);font-size:12px;margin-top:5px}
+    .year{border:1px solid var(--line);background:#fff;padding:9px 12px;border-radius:9px;color:var(--ink);font:600 12px "DM Sans"}
+    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:13px}.card{background:#fff;border:1px solid var(--line);border-radius:15px;padding:17px;min-width:0}
+    .metric-label{font-size:11px;color:var(--muted);font-weight:600}.metric{font:800 27px Manrope;margin:10px 0 3px;letter-spacing:-1px}.metric-note{font-size:10px;color:#8a9991}
+    .metric-icon{float:right;width:33px;height:33px;border-radius:10px;background:var(--green2);display:grid;place-items:center;color:var(--green);font-size:16px}
+    .two{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}.barrow{display:grid;grid-template-columns:105px 1fr 35px;gap:10px;align-items:center;margin:15px 0;font-size:11px;color:#5e7068}
+    .track{height:8px;border-radius:10px;background:#edf2ee;overflow:hidden}.fill{height:100%;background:#3a9470;border-radius:10px;width:0}
+    .placeholder{height:190px;border:1px dashed #cbd9d0;border-radius:12px;display:grid;place-items:center;text-align:center;color:#84938b;font-size:12px;padding:20px;line-height:1.6}
+    .mapbox{height:300px;border-radius:12px;overflow:hidden;background:#edf3ef;display:grid;place-items:center;text-align:center;color:#73847a;padding:20px;font-size:12px}
+    .tablewrap{overflow:auto;border:1px solid var(--line);border-radius:12px;background:#fff}table{width:100%;border-collapse:collapse;min-width:600px}th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);font-size:11px}th{background:#f7faf7;color:#66786e;font-weight:700}td{color:#304a40}.status{display:inline-block;background:#edf5ef;color:#337554;padding:4px 8px;border-radius:20px;font-size:10px}
+    .actions{display:flex;gap:9px;flex-wrap:wrap}.btn{border:0;background:var(--green);color:#fff;padding:10px 14px;border-radius:9px;font-weight:700;font-size:11px;cursor:pointer}.btn.secondary{background:#edf4ef;color:var(--green);border:1px solid #d8e6dc}
+    .note{border-left:3px solid var(--gold);background:#fff9ec;padding:12px 14px;border-radius:0 9px 9px 0;color:#79633b;font-size:11px;line-height:1.6}
+    footer{background:#103e32;color:#d9e9e0;padding:25px 0;font-size:11px}.foot{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+    .muted{color:var(--muted)}#connection{font-size:10px;color:#d4e9dd}
+    @media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}.top{padding-left:18px;padding-right:18px}}
+    @media(max-width:460px){.grid{gap:8px}.card{padding:13px}.metric{font-size:23px}.wrap{padding:0 15px}.section-head{align-items:start;flex-direction:column}}
+  </style>
 </head>
 <body>
-<div class="top"><b>PORTAL DATA KELURAHAN</b><span>Kecamatan Koto Tangah · Kota Padang · Sumatera Barat</span></div>
-<header><div class="wrap">
-<div class="brand"><div class="mark">⌂</div><div><b>DATA BALAI GADANG</b><small>The Green Gateway of Padang · Open Data · Nature · Heritage</small></div></div>
-<h1>Balai Gadang<br>Dalam Angka</h1>
-<p class="lead">Mengenal wilayah melalui data. Portal statistik terpadu untuk melihat perkembangan penduduk, ekonomi lokal, rumah kost, fasilitas, dan kondisi lingkungan Balai Gadang.</p>
-<div class="meta"><span class="chip">◉ Data wilayah</span><span class="chip">▦ Statistik tahunan</span><span class="chip">⌖ Peta digital</span></div>
-</div></header>
-<nav aria-label="Navigasi utama"><div class="wrap navin">
-<a class="active" href="#ringkasan">Ringkasan</a><a href="#profil">Profil Kelurahan</a><a href="#pemerintahan">Pemerintahan</a><a href="#layanan-publik">Layanan Publik & Darurat</a><a href="#sejarah-wisata">Sejarah & Wisata</a><a href="#demografi">Demografi</a><a href="#kost">Rumah Kost</a><a href="#ekonomi">Ekonomi</a><a href="#fasilitas">Fasilitas</a><a href="#lingkungan">Lingkungan</a><a href="#carbon-app">Balai Gadang Carbon</a><a href="#peta">Peta Digital</a>
-</div></nav>
-<main class="wrap">
-<div class="section-head" id="ringkasan"><div><h2>Ringkasan Wilayah</h2><div class="sub">Indikator utama Kelurahan Balai Gadang</div></div><select class="year" id="year"><option value="2026">Tahun 2026</option><option value="2025">Tahun 2025</option><option value="2024">Tahun 2024</option><option value="2023">Tahun 2023</option></select></div>
-<div class="grid">
-<div class="card"><span class="metric-icon">♙</span><div class="metric-label">Jumlah penduduk</div><div class="metric" id="population">—</div><div class="metric-note">jiwa · data terverifikasi</div></div>
-<div class="card"><span class="metric-icon">⌂</span><div class="metric-label">Kepala keluarga</div><div class="metric" id="households">—</div><div class="metric-note">KK · data terverifikasi</div></div>
-<div class="card"><span class="metric-icon">▤</span><div class="metric-label">Rumah kost</div><div class="metric" id="kosts">—</div><div class="metric-note">unit bangunan terdata</div></div>
-<div class="card"><span class="metric-icon">▣</span><div class="metric-label">Kamar kost</div><div class="metric" id="rooms">—</div><div class="metric-note">kamar tersedia</div></div>
-</div>
-<section id="profil">
-<div class="section-head"><div><h2>Profil Kelurahan Balai Gadang</h2><div class="sub">Mengenal sejarah, wilayah, masyarakat, dan potensi Balai Gadang</div></div></div>
-<div class="card"><h3>Pengantar</h3><p style="line-height:1.9">Balai Gadang merupakan salah satu kelurahan di Kecamatan Koto Tangah, Kota Padang, Provinsi Sumatera Barat. Wilayah ini memiliki karakter geografis, sosial, ekonomi, dan lingkungan yang beragam. Portal Balai Gadang Dalam Angka disusun sebagai sarana informasi untuk mengenal perkembangan wilayah melalui data dan dokumentasi.</p></div>
-<div class="two" style="margin-top:14px">
-<div class="card"><h3>1. Sejarah Singkat</h3><p class="sub" style="line-height:1.9">Catatan awal monografi menyebutkan bahwa pembentukan Kelurahan Balai Gadang berkaitan dengan penggabungan wilayah administratif terdahulu, antara lain Beringin, Air Dingin, Tanjung Aur, dan Sungai Bangek. Sejarah nama Balai Gadang, tahun pembentukan, serta dasar hukum penggabungannya masih perlu ditelusuri melalui arsip pemerintahan dan wawancara dengan tokoh masyarakat serta tokoh adat.</p></div>
-<div class="card"><h3>2. Letak Geografis dan Batas Wilayah</h3><p class="sub" style="line-height:1.9">Balai Gadang terletak di Kecamatan Koto Tangah, bagian utara Kota Padang. Publikasi statistik kecamatan yang menjadi bahan awal mencatat luas wilayah sekitar 106,90 km². Batas administratif dan luas wilayah akan disesuaikan dengan peta resmi terbaru Pemerintah Kota Padang.</p></div>
-<div class="card"><h3>3. Kondisi Topografi dan Lingkungan</h3><p class="sub" style="line-height:1.9">Bentang alam Balai Gadang mencakup kawasan permukiman, lahan pertanian, perkebunan, kawasan perbukitan, dan vegetasi alami. Kondisi topografi, elevasi, kemiringan lereng, jaringan sungai, serta tutupan lahan akan dikembangkan melalui pemetaan GIS dan pengumpulan data lapangan.</p></div>
-<div class="card"><h3>4. Pembagian Wilayah Administrasi</h3><p class="sub" style="line-height:1.9">Pembagian wilayah administrasi menjadi dasar penyusunan data kependudukan dan pelayanan publik. Catatan awal menyebutkan 14 RW dan 58 RT, sementara sumber lain mencatat 59 RT. Daftar RW dan RT beserta peta wilayahnya akan ditampilkan setelah dikonfirmasi kepada pemerintah kelurahan.</p></div>
-<div class="card"><h3>5. Karakteristik Sosial dan Ekonomi</h3><p class="sub" style="line-height:1.9">Kehidupan masyarakat Balai Gadang tumbuh dalam lingkungan sosial Minangkabau yang memiliki tradisi kekerabatan, kehidupan keagamaan, dan gotong royong. Aktivitas ekonomi masyarakat meliputi perdagangan, jasa, UMKM, pertanian, perkebunan, serta berbagai kegiatan produktif lainnya.</p></div>
-<div class="card"><h3>6. Potensi Wilayah dan Arah Pengembangan</h3><p class="sub" style="line-height:1.9">Potensi Balai Gadang mencakup pengembangan pertanian dan agroforestri, wisata alam dan budaya, penguatan UMKM, peningkatan infrastruktur, serta pelestarian lingkungan. Pengembangan basis data digital diharapkan mendukung perencanaan pembangunan berbasis bukti dan kolaborasi antara pemerintah, masyarakat, akademisi, dan pelaku usaha.</p></div>
-</div>
-<div class="note" style="margin-top:14px">Catatan: Profil ini merupakan draf awal. Informasi sejarah, batas wilayah, luas, topografi, serta jumlah RT/RW perlu diverifikasi menggunakan dokumen resmi sebelum ditetapkan sebagai informasi final.</div>
-</section>
-
-<section id="pemerintahan">
-<div class="section-head"><div><h2>Pemerintahan dan Tokoh Masyarakat</h2><div class="sub">Dokumentasi foto pejabat dan unsur kelembagaan Kelurahan Balai Gadang</div></div></div>
-<div class="card">
-<div class="official-slider" aria-label="Rolling foto pejabat Kelurahan Balai Gadang">
-<button class="slider-btn" id="officialPrev" type="button" aria-label="Foto sebelumnya">‹</button>
-<div class="official-frame">
-<img id="officialPhoto" src="assets/lurah-yufrizal-maas.jpg" alt="Foto Lurah Balai Gadang Yufrizal Maas">
-<div><p class="official-name" id="officialName">Yufrizal Maas, S.H.</p><div class="official-role" id="officialRole">Lurah Balai Gadang</div><p class="official-note" id="officialNote">Foto dikirim dan dikonfirmasi oleh pengelola portal. Periode jabatan belum dicantumkan.</p></div>
-</div>
-<button class="slider-btn" id="officialNext" type="button" aria-label="Foto berikutnya">›</button>
-</div>
-<div class="slider-dots" id="officialDots" aria-label="Pilih foto pejabat"></div>
-</div>
-<div class="note" style="margin-top:12px">Daftar ini akan diperluas setelah foto dan nama pejabat lainnya diterima serta diverifikasi. Informasi pribadi seperti nomor telepon tidak ditampilkan tanpa persetujuan publikasi.</div>
-</section>
-
-
-<section id="layanan-publik">
-<div class="section-head"><div><h2>Instansi Pelayanan Publik & Keadaan Darurat</h2><div class="sub">Kanal resmi untuk administrasi, keamanan, kesehatan, kebakaran, dan kebencanaan</div></div></div>
-<div class="note" style="margin-bottom:14px"><b>Keadaan darurat di Kota Padang: hubungi 112.</b> Layanan Nomor Tunggal Panggilan Darurat Kota Padang beroperasi 24 jam dan mengintegrasikan penanganan kebakaran, kecelakaan, gangguan keamanan, bencana, serta kegawatdaruratan lainnya. Untuk kegawatdaruratan medis, tersedia PSC 119.</div>
-<div class="grid">
-<div class="card"><div class="metric-icon">☎</div><h3>Padang Command Center 112</h3><div class="metric">112</div><p class="sub">Nomor darurat terpadu gratis, 24 jam untuk kebakaran, kecelakaan, bencana, gangguan keamanan, dan kejadian darurat lainnya.</p><a class="btn" href="https://sigap.padang.go.id/" target="_blank" rel="noopener">Buka PCC 112</a></div>
-<div class="card"><div class="metric-icon">✚</div><h3>PSC 119 — Medis</h3><div class="metric">119</div><p class="sub">Layanan kegawatdaruratan medis dan koordinasi ambulans Kota Padang. Gunakan untuk kondisi medis yang membutuhkan pertolongan segera.</p><a class="btn" href="https://dinkes.padang.go.id/" target="_blank" rel="noopener">Dinas Kesehatan</a></div>
-<div class="card"><div class="metric-icon">♧</div><h3>Polsek Koto Tangah</h3><p class="sub">Kepolisian sektor untuk layanan keamanan dan ketertiban wilayah Kecamatan Koto Tangah.</p><p class="sub"><b>Telepon direktori:</b> (0751) 480530<br><b>Alamat:</b> Lubuk Buaya, Koto Tangah, Padang.</p><a class="btn secondary" href="https://www.google.com/maps/search/?api=1&query=Polsek+Koto+Tangah+Padang" target="_blank" rel="noopener">Lokasi Polsek</a></div>
-<div class="card"><div class="metric-icon">🔥</div><h3>Pos Damkar Sektor 3 Koto Tangah</h3><p class="sub">Pos pemadam kebakaran dan penyelamatan di kawasan Lubuk Buaya untuk wilayah Koto Tangah dan sekitarnya.</p><p class="sub"><b>Telepon direktori:</b> (0751) 28558<br><b>Alamat:</b> Lubuk Buaya, Koto Tangah.</p><a class="btn secondary" href="https://www.google.com/maps/search/?api=1&query=Pos+Damkar+Sektor+3+Koto+Tangah" target="_blank" rel="noopener">Lokasi Pos Damkar</a></div>
-<div class="card"><div class="metric-icon">✚</div><h3>Puskesmas Air Dingin</h3><p class="sub">Pusat pelayanan kesehatan tingkat pertama yang berada di Kelurahan Balai Gadang.</p><p class="sub"><b>Telepon:</b> (0751) 499654<br><b>WhatsApp layanan:</b> 0822-8301-9855<br><b>Email:</b> puskesmas.airdingin@padang.go.id</p><a class="btn secondary" href="https://www.google.com/maps/search/?api=1&query=Puskesmas+Air+Dingin+Balai+Gadang" target="_blank" rel="noopener">Lokasi Puskesmas</a></div>
-<div class="card"><div class="metric-icon">⚠</div><h3>BPBD Kota Padang</h3><p class="sub">Koordinasi penanggulangan bencana, evakuasi, banjir, longsor, pohon tumbang, dan kondisi darurat kebencanaan.</p><p class="sub"><b>Call center:</b> (0751) 778775<br><b>WhatsApp:</b> 0858-9152-2181</p><a class="btn secondary" href="https://bpbd.padang.go.id/kontak" target="_blank" rel="noopener">Kontak BPBD</a></div>
-<div class="card"><div class="metric-icon">⌂</div><h3>Kantor Lurah Balai Gadang</h3><p class="sub">Pelayanan administrasi pemerintahan kelurahan dan koordinasi pelayanan masyarakat.</p><a class="btn secondary" href="https://www.google.com/maps/search/?api=1&query=Kantor+Lurah+Balai+Gadang+Padang" target="_blank" rel="noopener">Lokasi Kantor Lurah</a></div>
-<div class="card"><div class="metric-icon">▤</div><h3>Lapor Padang</h3><p class="sub">Kanal pengaduan pelayanan publik Pemko Padang. Pengaduan dapat disampaikan melalui formulir web atau WhatsApp resmi.</p><p class="sub"><b>WhatsApp:</b> 0811-6911-2112</p><a class="btn secondary" href="https://lapor.padang.go.id/" target="_blank" rel="noopener">Buat Pengaduan</a></div>
-</div>
-<div class="note" style="margin-top:14px">Nomor telepon instansi selain 112 dan 119 bersumber dari direktori/laman instansi yang ditemukan saat penyusunan. Sebelum dipakai dalam keadaan mendesak, konfirmasikan kembali ke kanal resmi. Jika situasi mengancam jiwa, utamakan panggilan 112.</div>
-</section>
-
-<section id="sejarah-wisata">
-<div class="section-head"><div><h2>Sejarah, Alam & Ekowisata Balai Gadang</h2><div class="sub">Jejak wilayah, sungai, pemandian alam, air terjun, dan wisata berbasis masyarakat</div></div></div>
-<div class="card" style="margin-bottom:14px">
-<h3>Sejarah dan identitas kawasan</h3>
-<p style="line-height:1.85">Balai Gadang berada di Kecamatan Koto Tangah, Kota Padang. Portal Desa Wisata Kementerian Pariwisata memperkenalkan Balai Gadang sebagai kawasan yang memiliki potensi wisata alam, seni, dan budaya. Sejumlah kelompok sadar wisata yang tercatat untuk kelurahan ini antara lain Baringin Balai Gadang, Sungai Bangek, dan Lubuk Lukum.</p>
-<p style="line-height:1.85">Riwayat pembentukan kelurahan, asal-usul nama Balai Gadang, tokoh pendiri, serta perkembangan kampung dan nagari perlu dilengkapi melalui arsip kelurahan, dokumen adat, dan wawancara dengan niniak mamak serta tokoh masyarakat. Karena itu, bagian ini tidak menetapkan tahun atau cerita asal-usul yang belum memiliki dokumen pendukung.</p>
-<a class="btn secondary" href="https://jadesta.kemenpar.go.id/desa/balai_gadang" target="_blank" rel="noopener">Profil Desa Wisata Balai Gadang</a>
-</div>
-<div class="section-head" style="margin-top:22px"><div><h2>Wisata Religi dan Sejarah Keislaman</h2><div class="sub">Masjid bersejarah dan pusat kehidupan keagamaan masyarakat Balai Gadang</div></div></div>
-<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(250px,1fr))">
-<article class="card">
-<div style="height:150px;border-radius:10px;background:linear-gradient(135deg,#e4efe8,#b8d2c2);display:grid;place-items:center;color:#176b50;font-size:54px" aria-label="Ilustrasi masjid">🕌</div>
-<h3>Masjid Raya Nagari Koto Tangah</h3>
-<p class="sub" style="line-height:1.75">Berlokasi di Jalan Hidayah Baringin, Kelurahan Balai Gadang. Data Sistem Informasi Masjid Kementerian Agama mencatat masjid jami ini berdiri pada 1914 dan berstatus tanah wakaf. Masjid ini menjadi salah satu penanda sejarah kehidupan keagamaan masyarakat Koto Tangah.</p>
-<div class="actions" style="margin-top:12px"><a class="btn secondary" href="https://simas.kemenag.go.id/profil/masjid/01.4.03.13.11.000010" target="_blank" rel="noopener">Profil Kemenag</a><a class="btn" href="https://www.google.com/maps/search/?api=1&query=-0.839927%2C100.364768" target="_blank" rel="noopener">Lihat Peta</a></div>
-</article>
-<article class="card">
-<div style="height:150px;border-radius:10px;background:linear-gradient(135deg,#e4efe8,#b8d2c2);display:grid;place-items:center;color:#176b50;font-size:54px" aria-label="Ilustrasi masjid">🕌</div>
-<h3>Masjid Raya Nurul Yaqin Air Dingin</h3>
-<p class="sub" style="line-height:1.75">Terletak di kawasan Air Dingin, Kelurahan Balai Gadang. Masjid ini menjadi pusat ibadah, pendidikan Al-Qur’an, dan kegiatan sosial keagamaan. Renovasinya diresmikan pada Juni 2026, sebagaimana diberitakan Pemerintah Kota Padang.</p>
-<div class="actions" style="margin-top:12px"><a class="btn secondary" href="https://padang.go.id/berita/balai-gadang-dikunjungi-tsr-pemprov-sumbar-didi-aryadi-terimakasih" target="_blank" rel="noopener">Berita Pemko Padang</a><a class="btn" href="https://www.google.com/maps/search/?api=1&query=Masjid+Raya+Nurul+Yaqin+Air+Dingin+Balai+Gadang+Padang" target="_blank" rel="noopener">Lihat Peta</a></div>
-</article>
-</div>
-<div class="note" style="margin:12px 0 18px">Etika kunjungan: berpakaian sopan, menjaga ketenangan saat ibadah berlangsung, meminta izin sebelum mengambil foto kegiatan atau jamaah, serta menghormati pengurus dan masyarakat setempat. Informasi sejarah Masjid Raya Nagari Koto Tangah merujuk data SIMAS Kementerian Agama; informasi Masjid Raya Nurul Yaqin merujuk pemberitaan Pemko Padang.</div>
-<div class="section-head" style="margin-top:22px"><div><h2>Wisata Edukasi, Kampus & Lanskap</h2><div class="sub">Pendidikan tinggi sebagai bagian dari identitas dan kebanggaan Balai Gadang</div></div></div>
-<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
-<article class="card">
-<div class="uinib-gallery" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">
-<figure style="margin:0"><img src="assets/uinib-kampus3-balai-gadang.jpg" alt="Panorama Kampus III UIN Imam Bonjol Padang di Sungai Bangek dengan latar perbukitan hijau" loading="lazy" style="width:100%;height:230px;object-fit:cover;object-position:center 55%;border-radius:10px"><figcaption class="sub" style="font-size:10px;margin:6px 0 0">Foto 1 — Panorama kampus dan lanskap perbukitan Sungai Bangek.</figcaption></figure>
-<figure style="margin:0"><img src="assets/uinib-rektorat-kampus3.jpg" alt="Gedung Rektorat UIN Imam Bonjol Padang Kampus III" loading="lazy" style="width:100%;height:230px;object-fit:cover;object-position:center 50%;border-radius:10px"><figcaption class="sub" style="font-size:10px;margin:6px 0 0">Foto 2 — Gedung Rektorat UIN Imam Bonjol Padang.</figcaption></figure>
-</div><p class="sub" style="font-size:10px;margin:8px 0 0">Dokumentasi foto disampaikan oleh pengguna portal. Pastikan izin pemilik foto dan persetujuan penggunaan dari pihak terkait sebelum publikasi terbuka.</p>
-<h3>Kampus III UIN Imam Bonjol Padang</h3>
-<p class="sub" style="line-height:1.75">Kawasan pendidikan tinggi di Sungai Bangek, Kelurahan Balai Gadang. Kampus ini menjadi bagian penting dari identitas kawasan, memperkuat citra Balai Gadang sebagai lingkungan yang dekat dengan pendidikan, ilmu pengetahuan, dan pengembangan masyarakat. Potensi kunjungan dapat diarahkan pada pengenalan lingkungan kampus, arsitektur, dan lanskap sekitar sesuai kebijakan serta izin pengelola.</p>
-<div class="actions" style="margin-top:12px"><a class="btn secondary" href="https://uinib.ac.id/" target="_blank" rel="noopener">Situs Resmi UIN IB</a><a class="btn" href="https://www.google.com/maps/search/?api=1&query=Kampus+III+UIN+Imam+Bonjol+Padang+Sungai+Bangek" target="_blank" rel="noopener">Lihat Peta</a></div>
-<p class="sub" style="margin-top:10px">Catatan kunjungan: kampus merupakan lingkungan akademik, bukan objek wisata bebas. Pengunjung wajib menghormati kegiatan belajar, tata tertib, keamanan, dan ketentuan izin dari pihak kampus. Foto dan kegiatan komersial harus memperoleh persetujuan pengelola.</p>
-</article>
-</div>
-<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(235px,1fr))">
-<article class="card">
-<img src="assets/lubuak-ngalauan.jpg" alt="Lubuak Ngalauan, kolam alami dan aliran air di kawasan hutan" loading="lazy" style="width:100%;height:230px;object-fit:cover;border-radius:10px">
-<h3>Lubuak Ngalauan</h3>
-<p class="sub" style="line-height:1.7">Destinasi wisata alam dengan aliran air, kolam alami, bebatuan, dan vegetasi hutan sebagaimana terlihat pada dokumentasi pengunjung. Daya tarik utamanya adalah suasana alam dan air terjun kecil. Informasi akses, pengelola, fasilitas, biaya, serta kondisi keselamatan perlu dikonfirmasi langsung kepada masyarakat atau pengelola setempat sebelum kunjungan.</p>
-<div class="actions"><a class="btn" href="https://www.google.com/maps/search/?api=1&query=Lubuak+Ngalauan+Balai+Gadang+Padang" target="_blank" rel="noopener">Lihat Peta</a></div>
-<p class="sub" style="font-size:10px">Foto dokumentasi dari pengguna portal. Lokasi dan akses perlu diverifikasi bersama pengelola setempat.</p>
-</article>
-
-<article class="card">
-<img src="https://awsimages.detik.net.id/community/media/visual/2025/01/03/asiknya-bersantai-di-wisata-air-lubuk-lukum-1_169.jpeg?q=90&w=700" alt="Suasana pemandian Lubuk Lukum" style="width:100%;height:165px;object-fit:cover;border-radius:10px" onerror="this.style.display='none'">
-<h3>Lubuk Lukum</h3><p class="sub" style="line-height:1.7">Wisata pemandian alam di aliran Batang Air Dingin. Dikenal dengan suasana sungai, tempat duduk di tepi air, dan pengembangan ikan lokal. Tetap perhatikan arus serta kondisi sungai setelah hujan.</p><a href="https://travel.detik.com/fototravel/d-7715776/asiknya-bersantai-di-wisata-air-lubuk-lukum-padang" target="_blank" rel="noopener">Lihat dokumentasi</a>
-</article>
-<article class="card">
-<img src="https://i.pinimg.com/736x/5a/43/b4/5a43b4da472773980991e38231aafb07.jpg" alt="Air terjun dan kolam alami kawasan Sungai Bangek" style="width:100%;height:165px;object-fit:cover;border-radius:10px" onerror="this.style.display='none'">
-<h3>Ngungun Saok / Air Terjun</h3><p class="sub" style="line-height:1.7">Kawasan air terjun dan kolam alami yang disebut dalam daftar atraksi wisata Balai Gadang. Nama titik, akses trekking, dan kondisi keselamatan perlu dikonfirmasi kepada pengelola setempat sebelum kunjungan.</p><a href="https://jadesta.kemenpar.go.id/desa/balai_gadang" target="_blank" rel="noopener">Rujukan Desa Wisata</a>
-</article>
-<article class="card">
-<img src="https://awsimages.detik.net.id/community/media/visual/2020/02/19/1089a8e9-0500-4f2a-8f6a-62e22e8757eb.jpeg?q=90&w=700" alt="Bendungan Koto Tuo" style="width:100%;height:165px;object-fit:cover;border-radius:10px" onerror="this.style.display='none'">
-<h3>Bendungan / Cek Dam Koto Tuo</h3><p class="sub" style="line-height:1.7">Bangunan pengendali aliran sungai yang juga dikenal sebagai tempat rekreasi warga. Area bendungan memiliki risiko arus dan kedalaman; jangan melompat atau berenang di luar area yang dinyatakan aman.</p><a href="https://news.detik.com/foto-news/d-4905119/melompat-di-cek-dam-koto-tuo-padang" target="_blank" rel="noopener">Lihat dokumentasi</a>
-</article>
-<article class="card">
-<div class="placeholder" style="height:165px">Foto dokumentasi resmi menunggu konfirmasi pengelola</div>
-<h3>Pemandian Lori</h3><p class="sub" style="line-height:1.7">Disebut sebagai salah satu destinasi dalam profil Desa Wisata Balai Gadang. Lokasi administratif dan pengelolaannya perlu dipastikan kembali karena beberapa sumber menempatkan kawasan pemandian Lori di Lubuk Minturun.</p><a href="https://jadesta.kemenpar.go.id/desa/balai_gadang" target="_blank" rel="noopener">Rujukan Desa Wisata</a>
-</article>
-<article class="card">
-<div class="placeholder" style="height:165px">Foto dokumentasi resmi menunggu konfirmasi pengelola</div>
-<h3>Pincuran Tujuh</h3><p class="sub" style="line-height:1.7">Nama lokasi yang tercatat dalam kajian potensi wisata Kecamatan Koto Tangah sebagai potensi wisata alam Balai Gadang. Informasi akses, fasilitas, dan kondisi terkini masih perlu pendataan lapangan.</p><a href="https://ejournal.unisai.ac.id/index.php/jiam/article/download/278/315/1297" target="_blank" rel="noopener">Lihat rujukan kajian</a>
-</article>
-<article class="card">
-<div class="placeholder" style="height:165px">Foto dokumentasi resmi menunggu konfirmasi pengelola</div>
-<h3>Sungai Bangek Ecotourism</h3><p class="sub" style="line-height:1.7">Wisata berbasis sungai dan masyarakat. Profil Jadesta menyebut beberapa spot pemandian, terapi ikan garing, camping ground, serta atraksi seni tradisional seperti randai dan silek.</p><a href="https://jadesta.kemenpar.go.id/desa/sungai_bangek_ecotourism_1" target="_blank" rel="noopener">Profil Sungai Bangek Ecotourism</a>
-</article>
-</div>
-<div class="note" style="margin-top:14px">Catatan foto: gambar Lubuk Lukum dan Cek Dam Koto Tuo ditautkan dari dokumentasi media; foto air terjun adalah foto referensi kawasan Sungai Bangek, bukan verifikasi spesifik titik Ngungun Saok. Foto Pemandian Lori, Pincuran Tujuh, dan titik Sungai Bangek lainnya akan diganti dengan dokumentasi resmi setelah diperoleh dari Pokdarwis/pengelola.</div>
-<div class="card" style="margin-top:14px"><h3>Ekowisata dan konservasi</h3><p class="sub" style="line-height:1.8">Pengembangan ekowisata dapat diarahkan pada kebersihan sungai, perlindungan sempadan dan vegetasi, pengelolaan sampah, keselamatan pengunjung, edukasi keanekaragaman hayati, pemberdayaan Pokdarwis, serta manfaat ekonomi bagi warga. Pengunjung dianjurkan tidak meninggalkan sampah, tidak merusak vegetasi, dan mematuhi arahan pengelola.</p></div>
-</section>
-
-<section id="demografi"><div class="section-head"><div><h2>Demografi</h2><div class="sub">Struktur penduduk dan rumah tangga</div></div></div><div class="two"><div class="card"><b style="font:700 13px Manrope">Komposisi kelompok umur</b><div class="sub">Proporsi penduduk menurut kelompok usia</div><div id="age-bars"><div class="placeholder">Grafik akan tampil setelah data demografi dimasukkan dan diverifikasi.</div></div></div><div class="card"><b style="font:700 13px Manrope">Profil kependudukan</b><div class="sub">Indikator tahun terpilih</div><div class="placeholder">Belum ada data demografi terverifikasi.<br>Data kosong tidak ditampilkan sebagai angka nol.</div></div></div></section>
-<section id="kost"><div class="section-head"><div><h2>Rumah Kost & Hunian Sewa</h2><div class="sub">Basis data hunian, kapasitas, dan tingkat keterisian</div></div><div class="actions"><button class="btn secondary" onclick="document.getElementById('kost-table').scrollIntoView({behavior:'smooth'})">Lihat tabel</button></div></div>
-<div class="grid"><div class="card"><div class="metric-label">Kamar terisi</div><div class="metric" id="occupied">—</div><div class="metric-note">kamar</div></div><div class="card"><div class="metric-label">Kamar kosong</div><div class="metric" id="vacant">—</div><div class="metric-note">kamar</div></div><div class="card"><div class="metric-label">Tingkat okupansi</div><div class="metric" id="occupancy">—</div><div class="metric-note">terisi / tersedia</div></div><div class="card"><div class="metric-label">Tarif median</div><div class="metric" id="median-rent">—</div><div class="metric-note">rupiah / bulan · bila tersedia</div></div></div>
-<div class="tablewrap" id="kost-table" style="margin-top:14px"><table><thead><tr><th>Kode Kost</th><th>Kelompok lokasi</th><th>Kamar tersedia</th><th>Terisi</th><th>Fasilitas ringkas</th><th>Status data</th></tr></thead><tbody id="kost-body"><tr><td colspan="6" class="muted">Belum ada data rumah kost yang dipublikasikan.</td></tr></tbody></table></div><p class="sub">Alamat rinci, nama pemilik, nomor kontak, dan identitas penghuni tidak ditampilkan pada portal publik.</p></section>
-<section id="ekonomi"><div class="section-head"><div><h2>Ekonomi Lokal</h2><div class="sub">UMKM, mata pencaharian, dan aktivitas ekonomi</div></div></div><div class="grid"><div class="card"><div class="metric-label">UMKM terdata</div><div class="metric" id="umkm">—</div><div class="metric-note">unit usaha</div></div><div class="card"><div class="metric-label">Kategori usaha</div><div class="metric" id="business-types">—</div><div class="metric-note">kategori teridentifikasi</div></div><div class="card"><div class="metric-label">Penduduk bekerja</div><div class="metric" id="employed">—</div><div class="metric-note">orang · bila tersedia</div></div><div class="card"><div class="metric-label">Fasilitas umum</div><div class="metric" id="facilities">—</div><div class="metric-note">titik terdata</div></div></div></section>
-<section id="fasilitas"><div class="section-head"><div><h2>Fasilitas & Infrastruktur</h2><div class="sub">Pendidikan, kesehatan, ibadah, jalan, dan layanan publik</div></div></div><div class="tablewrap"><table><thead><tr><th>Kategori</th><th>Jumlah</th><th>Periode</th><th>Status</th></tr></thead><tbody id="facility-body"><tr><td colspan="4" class="muted">Data fasilitas belum tersedia.</td></tr></tbody></table></div></section>
-<section id="lingkungan"><div class="section-head"><div><h2>Lingkungan & Karbon</h2><div class="sub">Terhubung dengan Balai Gadang Carbon — Landscape Carbon Management System</div></div></div><div class="grid"><div class="card"><div class="metric-label">Tutupan pohon</div><div class="metric" id="tree-cover">—</div><div class="metric-note">hektare</div></div><div class="card"><div class="metric-label">Area agroforestri</div><div class="metric" id="agroforestry">—</div><div class="metric-note">hektare</div></div><div class="card"><div class="metric-label">Stok karbon</div><div class="metric" id="carbon">—</div><div class="metric-note">tCO₂e · bila tersedia</div></div><div class="card"><div class="metric-label">Petak pemantauan</div><div class="metric" id="plots">—</div><div class="metric-note">PSP / cluster inventory</div></div></div><div class="note" style="margin-top:13px">Data lingkungan ditampilkan berdasarkan hasil pemetaan dan pemantauan yang memiliki sumber, tanggal pengukuran, serta status verifikasi. Integrasi tidak mengubah atau menghapus modul pada aplikasi Android Balai Gadang Carbon.</div></section>
-
-<section id="carbon-app"><div class="section-head"><div><h2>Balai Gadang Carbon</h2><div class="sub">Landscape Carbon Management System</div></div></div>
-<div class="card" style="background:linear-gradient(120deg,#164d3d,#267653);color:white"><h2 style="font-size:24px;color:white">Sistem Pengelolaan Karbon Lanskap</h2><p style="line-height:1.8;color:#e0eee5">Platform digital untuk pemetaan tutupan lahan, inventarisasi vegetasi, penghitungan karbon, monitoring, rehabilitasi, agroforestri, dan pengembangan ekonomi hijau di Balai Gadang.</p><div class="meta"><span class="chip">GIS & Pemetaan</span><span class="chip">Carbon Calculator</span><span class="chip">MRV System</span><span class="chip">Agroforestry</span></div></div>
-<div class="grid" style="margin-top:14px">
-<div class="card"><div class="metric-icon">⌖</div><h3>GIS & Peta Digital</h3><p class="sub">Pemetaan KTH Balai Gadang dan usulan HKm Saiba, termasuk tutupan lahan dan kondisi geografis.</p><button class="btn secondary" onclick="document.getElementById('peta').scrollIntoView({behavior:'smooth'})">Buka Peta Portal</button></div>
-<div class="card"><div class="metric-icon">🌳</div><h3>Carbon Calculator</h3><p class="sub">Penghitungan biomassa atas permukaan, biomassa bawah permukaan, stok karbon, dan ekuivalen CO₂.</p><span class="status">Modul aplikasi Android</span></div>
-<div class="card"><div class="metric-icon">▦</div><h3>MRV System</h3><p class="sub">Monitoring, Reporting and Verification untuk dokumentasi dan pemantauan karbon.</p><span class="status">Modul aplikasi Android</span></div>
-<div class="card"><div class="metric-icon">♧</div><h3>Rehabilitasi</h3><p class="sub">Dokumentasi kegiatan rehabilitasi, penanaman, dan pemulihan vegetasi.</p><span class="status">Modul aplikasi Android</span></div>
-<div class="card"><div class="metric-icon">🌱</div><h3>Agroforestry</h3><p class="sub">Pengembangan sistem agroforestri dan pemantauan potensi hasil lahan.</p><span class="status">Modul aplikasi Android</span></div>
-<div class="card"><div class="metric-icon">🍯</div><h3>Ekonomi Madu</h3><p class="sub">Dokumentasi potensi madu dan pengembangan ekonomi masyarakat.</p><span class="status">Modul aplikasi Android</span></div>
-<div class="card"><div class="metric-icon">◎</div><h3>ESG</h3><p class="sub">Informasi aspek lingkungan, sosial, dan tata kelola pengelolaan lanskap.</p><span class="status">Modul aplikasi Android</span></div>
-<div class="card"><div class="metric-icon">Rp</div><h3>Keuangan</h3><p class="sub">Pengelolaan informasi pembiayaan, kegiatan, dan potensi ekonomi karbon.</p><span class="status">Modul aplikasi Android</span></div>
-</div><div class="note" style="margin-top:14px">Integrasi ini merupakan halaman pengenalan modul. Fungsi kamera, GPS, penyimpanan lokal, input lapangan, dan kalkulasi asli aplikasi Android memerlukan implementasi web tersendiri atau tetap dijalankan melalui APK Balai Gadang Carbon.</div></section>
-
-<section id="peta"><div class="section-head"><div><h2>Peta Digital Balai Gadang</h2><div class="sub">Sebaran rumah kost, fasilitas, UMKM, dan area pemantauan karbon</div></div></div><div class="card"><div id="bg-map" role="application" aria-label="Peta interaktif Kelurahan Balai Gadang"></div><div class="map-legend"><span><i class="legend-line"></i> Batas referensi administrasi</span><span>Basemap: OpenStreetMap</span></div><div class="map-status" id="map-status">Memuat peta dasar dan mencoba mengambil geometri batas referensi dari layanan Badan Informasi Geospasial…</div></div><div class="note" style="margin-top:12px">Catatan: layer batas yang dicoba dimuat berasal dari layanan BIG edisi 2020 dan bersifat referensi kartografis, bukan pengganti dokumen penetapan batas terbaru Pemerintah Kota Padang. Titik fasilitas belum ditampilkan karena koordinat fasilitas yang telah diverifikasi dan disetujui untuk publikasi belum tersedia.</div></section>
-<div class="section-head"><div><h2>Sumber & Metadata</h2><div class="sub">Transparansi dan kualitas data</div></div></div>
-<div class="card"><div class="sub" style="line-height:1.8">Setiap indikator idealnya mencantumkan sumber data, tahun/periode, tanggal pembaruan, satuan, metode pengumpulan, dan status verifikasi. Data administratif dapat bersumber dari kelurahan; data statistik dari BPS; data kost dan UMKM dari pendataan lapangan; data lingkungan dari Balai Gadang Carbon.</div><div id="connection" style="margin-top:12px">Mode tampilan: prototipe. Konfigurasi Supabase belum diisi.</div></div>
-</main>
-<footer><div class="wrap foot"><div><b>Balai Gadang Dalam Angka</b><div style="margin-top:5px;opacity:.8">Platform data wilayah dan pembangunan berkelanjutan.</div></div><div>Bagian dari ekosistem Balai Gadang Digital<br>© 2026 · Kelurahan Balai Gadang, Kota Padang</div></div></footer>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script src="config.js"></script>
-<script>
-const fmt=n=>n==null?"—":Number(n).toLocaleString("id-ID");
-function setText(id,v,suffix=""){const el=document.getElementById(id);if(el)el.textContent=v==null?"—":fmt(v)+suffix;}
-async function loadPortal(){
- const cfg=window.BG_CONFIG||{};
- if(!cfg.url||!cfg.anonKey||!window.supabase){document.getElementById("connection").textContent="Mode prototipe: hubungkan project Supabase dan isi config.js untuk memuat data resmi.";return;}
- const db=window.supabase.createClient(cfg.url,cfg.anonKey);document.getElementById("connection").textContent="Menghubungkan ke database Balai Gadang Dalam Angka…";
- const year=Number(document.getElementById("year").value);
- try{
-  const {data:demo,error:de}=await db.from("v_demografi_publik").select("*").eq("tahun",year).maybeSingle();if(de)throw de;
-  if(demo){setText("population",demo.jumlah_penduduk);setText("households",demo.jumlah_kk);}
-  const {data:kost,error:ke}=await db.from("v_kost_ringkasan_publik").select("*").eq("tahun",year).maybeSingle();if(ke)throw ke;
-  if(kost){setText("kosts",kost.jumlah_kost);setText("rooms",kost.kamar_tersedia);setText("occupied",kost.kamar_terisi);setText("vacant",kost.kamar_kosong);setText("occupancy",kost.okupansi_persen,"%");document.getElementById("median-rent").textContent=kost.median_tarif==null?"—":"Rp "+fmt(kost.median_tarif);}
-  const {data:biz}=await db.from("v_ekonomi_publik").select("*").eq("tahun",year).maybeSingle();if(biz){setText("umkm",biz.jumlah_umkm);setText("business-types",biz.jumlah_kategori);setText("employed",biz.penduduk_bekerja);}
-  const {data:fac}=await db.from("v_fasilitas_publik").select("*").eq("tahun",year).maybeSingle();if(fac)setText("facilities",fac.jumlah_fasilitas);
-  const {data:env}=await db.from("v_lingkungan_publik").select("*").eq("tahun",year).maybeSingle();if(env){setText("tree-cover",env.tutupan_pohon_ha);setText("agroforestry",env.agroforestri_ha);setText("carbon",env.stok_karbon_tco2e);setText("plots",env.jumlah_petak);}
-  document.getElementById("connection").textContent="Terhubung ke database. Angka yang tampil mengikuti data yang telah dipublikasikan dan diverifikasi.";
- }catch(e){document.getElementById("connection").textContent="Database belum siap atau kebijakan akses belum dikonfigurasi: "+(e.message||"periksa konfigurasi Supabase");}
-}
-document.getElementById("year").addEventListener("change",loadPortal);loadPortal();
-
-// Rolling foto pejabat. Foto tambahan dapat dimasukkan ke array ini setelah diterima.
-const officials=[
- {name:"Yufrizal Maas, S.H.",role:"Lurah Balai Gadang",photo:"assets/lurah-yufrizal-maas.jpg",note:"Foto dikirim dan dikonfirmasi oleh pengelola portal. Periode jabatan belum dicantumkan."},
- {name:"Seiba Malin",role:"Ketua LPM Kelurahan Balai Gadang",photo:"assets/ketua-lpm-seiba-malin.jpg",note:"Foto profil berasal dari tangkapan layar kontak yang dikirim pengelola portal. Nomor telepon tidak dipublikasikan."}
-];
-let officialIndex=0,officialTimer;
-function showOfficial(i){
- officialIndex=(i+officials.length)%officials.length;const p=officials[officialIndex];
- document.getElementById("officialPhoto").src=p.photo;document.getElementById("officialPhoto").alt="Foto "+p.name;
- document.getElementById("officialName").textContent=p.name;document.getElementById("officialRole").textContent=p.role;document.getElementById("officialNote").textContent=p.note;
- document.querySelectorAll(".slider-dot").forEach((d,n)=>d.classList.toggle("active",n===officialIndex));
-}
-function restartOfficialTimer(){clearInterval(officialTimer);officialTimer=setInterval(()=>showOfficial(officialIndex+1),5000);}
-officials.forEach((p,i)=>{const d=document.createElement("button");d.className="slider-dot"+(i===0?" active":"");d.type="button";d.setAttribute("aria-label","Tampilkan foto "+p.name);d.addEventListener("click",()=>{showOfficial(i);restartOfficialTimer();});document.getElementById("officialDots").appendChild(d);});
-document.getElementById("officialPrev").addEventListener("click",()=>{showOfficial(officialIndex-1);restartOfficialTimer();});
-document.getElementById("officialNext").addEventListener("click",()=>{showOfficial(officialIndex+1);restartOfficialTimer();});
-restartOfficialTimer();
-
-// Sinkronisasi menu aktif berdasarkan posisi scroll.
-const navLinks=[...document.querySelectorAll("nav a[href^='#']")];
-const navSections=navLinks.map(link=>document.querySelector(link.getAttribute("href"))).filter(Boolean);
-function updateActiveNav(){const marker=window.scrollY+125;let current=navSections[0];for(const section of navSections){if(section.getBoundingClientRect().top+window.scrollY<=marker)current=section;}navLinks.forEach(link=>{const active=current&&link.getAttribute("href")==="#"+current.id;link.classList.toggle("active",Boolean(active));if(active)link.setAttribute("aria-current","location");else link.removeAttribute("aria-current");});}
-window.addEventListener("scroll",updateActiveNav,{passive:true});window.addEventListener("hashchange",updateActiveNav);window.addEventListener("resize",updateActiveNav);updateActiveNav();
-
-// Peta interaktif dengan layer batas referensi BIG 2020.
-(function initBalaiGadangMap(){
- const mapEl=document.getElementById("bg-map"),statusEl=document.getElementById("map-status");
- if(!mapEl||!window.L){if(statusEl)statusEl.textContent="Peta belum dapat dimuat. Periksa koneksi internet atau pustaka peta.";return;}
- const map=L.map(mapEl).setView([-0.80,100.35],11);
- L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map);
- const endpoint="https://geoservices.big.go.id/gis/rest/services/PKLP/BatasWilayah/MapServer/1/query";
- const params=new URLSearchParams({where:"WADMKD='Balai Gadang' AND WADMKC='Koto Tangah'",outFields:"NAMOBJ,WADMKD,WADMKC,WADMKK,WADMPR,LUASWH,UUPP",returnGeometry:"true",outSR:"4326",f:"geojson"});
- fetch(endpoint+"?"+params.toString()).then(r=>{if(!r.ok)throw new Error("Layanan batas tidak merespons.");return r.json();}).then(data=>{
-  if(!data||!Array.isArray(data.features)||!data.features.length)throw new Error("Objek Balai Gadang tidak ditemukan pada layer referensi BIG.");
-  const boundary=L.geoJSON(data,{style:{color:"#176b50",weight:3,fillColor:"#3a9470",fillOpacity:.12}}).addTo(map);map.fitBounds(boundary.getBounds(),{padding:[18,18]});
-  statusEl.textContent="Batas referensi berhasil dimuat dari layanan BIG. Tahun data layer: 2020. Cocokkan dengan dokumen batas terbaru sebelum digunakan sebagai batas legal.";
- }).catch(e=>{statusEl.textContent="Peta dasar tersedia, tetapi batas referensi belum berhasil dimuat: "+e.message+" Tidak ada batas atau titik fasilitas yang direkayasa.";});
- setTimeout(()=>map.invalidateSize(),250);
-})();
-</script>
+  <div class="top"><b>PORTAL DATA KELURAHAN</b><span>Kecamatan Koto Tangah · Kota Padang · Sumatera Barat</span></div>
+  <header><div class="wrap">
+    <div class="brand"><div class="mark">⌂</div><div><b>DATA BALAI GADANG</b><small>Open Data · Demografi · Lingkungan</small></div></div>
+    <h1>Balai Gadang<br>Dalam Angka</h1>
+    <p class="lead">Mengenal wilayah melalui data. Portal statistik terpadu untuk melihat perkembangan penduduk, ekonomi lokal, rumah kost, fasilitas, dan kondisi lingkungan Balai Gadang.</p>
+    <div class="meta"><span class="chip">◉ Data wilayah</span><span class="chip">▦ Statistik tahunan</span><span class="chip">⌖ Peta digital</span></div>
+  </div></header>
+  <nav><div class="wrap navin">
+    <a class="active" href="#ringkasan">Ringkasan</a><a href="#demografi">Demografi</a><a href="#kost">Rumah Kost</a><a href="#ekonomi">Ekonomi</a><a href="#fasilitas">Fasilitas</a><a href="#lingkungan">Lingkungan</a><a href="#peta">Peta Digital</a>
+  </div></nav>
+  <main class="wrap">
+    <div class="section-head" id="ringkasan"><div><h2>Ringkasan Wilayah</h2><div class="sub">Indikator utama Kelurahan Balai Gadang</div></div><select class="year" id="year"><option value="2026">Tahun 2026</option><option value="2025">Tahun 2025</option><option value="2024">Tahun 2024</option><option value="2023">Tahun 2023</option></select></div>
+    <div class="grid">
+      <div class="card"><span class="metric-icon">♙</span><div class="metric-label">Jumlah penduduk</div><div class="metric" id="population">—</div><div class="metric-note">jiwa · data terverifikasi</div></div>
+      <div class="card"><span class="metric-icon">⌂</span><div class="metric-label">Kepala keluarga</div><div class="metric" id="households">—</div><div class="metric-note">KK · data terverifikasi</div></div>
+      <div class="card"><span class="metric-icon">▤</span><div class="metric-label">Rumah kost</div><div class="metric" id="kosts">—</div><div class="metric-note">unit bangunan terdata</div></div>
+      <div class="card"><span class="metric-icon">▣</span><div class="metric-label">Kamar kost</div><div class="metric" id="rooms">—</div><div class="metric-note">kamar tersedia</div></div>
+    </div>
+    <section id="demografi"><div class="section-head"><div><h2>Demografi</h2><div class="sub">Struktur penduduk dan rumah tangga</div></div></div>
+      <div class="two"><div class="card"><b style="font:700 13px Manrope">Komposisi kelompok umur</b><div class="sub">Proporsi penduduk menurut kelompok usia</div><div id="age-bars"><div class="placeholder">Grafik akan tampil setelah data demografi dimasukkan dan diverifikasi.</div></div></div>
+      <div class="card"><b style="font:700 13px Manrope">Profil kependudukan</b><div class="sub">Indikator tahun terpilih</div><div class="placeholder">Belum ada data demografi terverifikasi.<br>Data kosong tidak ditampilkan sebagai angka nol.</div></div></div>
+    </section>
+    <section id="kost"><div class="section-head"><div><h2>Rumah Kost & Hunian Sewa</h2><div class="sub">Basis data hunian, kapasitas, dan tingkat keterisian</div></div><div class="actions"><button class="btn secondary" onclick="document.getElementById('kost-table').scrollIntoView({behavior:'smooth'})">Lihat tabel</button></div></div>
+      <div class="grid">
+        <div class="card"><div class="metric-label">Kamar terisi</div><div class="metric" id="occupied">—</div><div class="metric-note">kamar</div></div>
+        <div class="card"><div class="metric-label">Kamar kosong</div><div class="metric" id="vacant">—</div><div class="metric-note">kamar</div></div>
+        <div class="card"><div class="metric-label">Tingkat okupansi</div><div class="metric" id="occupancy">—</div><div class="metric-note">terisi / tersedia</div></div>
+        <div class="card"><div class="metric-label">Tarif median</div><div class="metric" id="median-rent">—</div><div class="metric-note">rupiah / bulan · bila tersedia</div></div>
+      </div>
+      <div class="tablewrap" id="kost-table" style="margin-top:14px"><table><thead><tr><th>Kode Kost</th><th>Kelompok lokasi</th><th>Kamar tersedia</th><th>Terisi</th><th>Fasilitas ringkas</th><th>Status data</th></tr></thead><tbody id="kost-body"><tr><td colspan="6" class="muted">Belum ada data rumah kost yang dipublikasikan.</td></tr></tbody></table></div>
+      <p class="sub">Alamat rinci, nama pemilik, nomor kontak, dan identitas penghuni tidak ditampilkan pada portal publik.</p>
+    </section>
+    <section id="ekonomi"><div class="section-head"><div><h2>Ekonomi Lokal</h2><div class="sub">UMKM, mata pencaharian, dan aktivitas ekonomi</div></div></div>
+      <div class="grid"><div class="card"><div class="metric-label">UMKM terdata</div><div class="metric" id="umkm">—</div><div class="metric-note">unit usaha</div></div><div class="card"><div class="metric-label">Kategori usaha</div><div class="metric" id="business-types">—</div><div class="metric-note">kategori teridentifikasi</div></div><div class="card"><div class="metric-label">Penduduk bekerja</div><div class="metric" id="employed">—</div><div class="metric-note">orang · bila tersedia</div></div><div class="card"><div class="metric-label">Fasilitas umum</div><div class="metric" id="facilities">—</div><div class="metric-note">titik terdata</div></div></div>
+    </section>
+    <section id="fasilitas"><div class="section-head"><div><h2>Fasilitas & Infrastruktur</h2><div class="sub">Pendidikan, kesehatan, ibadah, jalan, dan layanan publik</div></div></div><div class="tablewrap"><table><thead><tr><th>Kategori</th><th>Jumlah</th><th>Periode</th><th>Status</th></tr></thead><tbody id="facility-body"><tr><td colspan="4" class="muted">Data fasilitas belum tersedia.</td></tr></tbody></table></div></section>
+    <section id="lingkungan"><div class="section-head"><div><h2>Lingkungan & Karbon</h2><div class="sub">Terhubung dengan Balai Gadang Carbon — Landscape Carbon Management System</div></div></div>
+      <div class="grid"><div class="card"><div class="metric-label">Tutupan pohon</div><div class="metric" id="tree-cover">—</div><div class="metric-note">hektare</div></div><div class="card"><div class="metric-label">Area agroforestri</div><div class="metric" id="agroforestry">—</div><div class="metric-note">hektare</div></div><div class="card"><div class="metric-label">Stok karbon</div><div class="metric" id="carbon">—</div><div class="metric-note">tCO₂e · bila tersedia</div></div><div class="card"><div class="metric-label">Petak pemantauan</div><div class="metric" id="plots">—</div><div class="metric-note">PSP / cluster inventory</div></div></div>
+      <div class="note" style="margin-top:13px">Data lingkungan ditampilkan berdasarkan hasil pemetaan dan pemantauan yang memiliki sumber, tanggal pengukuran, serta status verifikasi. Integrasi tidak mengubah atau menghapus modul pada aplikasi Android Balai Gadang Carbon.</div>
+    </section>
+    <section id="peta"><div class="section-head"><div><h2>Peta Digital Balai Gadang</h2><div class="sub">Sebaran rumah kost, fasilitas, UMKM, dan area pemantauan karbon</div></div></div>
+      <div class="mapbox">Peta GIS akan dihubungkan ke layanan peta Balai Gadang Carbon.<br>Layer publik hanya menampilkan lokasi yang telah disetujui untuk dipublikasikan.</div>
+    </section>
+    <div class="section-head"><div><h2>Sumber & Metadata</h2><div class="sub">Transparansi dan kualitas data</div></div></div>
+    <div class="card"><div class="sub" style="line-height:1.8">Setiap indikator idealnya mencantumkan sumber data, tahun/periode, tanggal pembaruan, satuan, metode pengumpulan, dan status verifikasi. Data administratif dapat bersumber dari kelurahan; data statistik dari BPS; data kost dan UMKM dari pendataan lapangan; data lingkungan dari Balai Gadang Carbon.</div><div id="connection" style="margin-top:12px">Mode tampilan: prototipe. Konfigurasi Supabase belum diisi.</div></div>
+  </main>
+  <footer><div class="wrap foot"><div><b>Balai Gadang Dalam Angka</b><div style="margin-top:5px;opacity:.8">Platform data wilayah dan pembangunan berkelanjutan.</div></div><div>Bagian dari ekosistem Balai Gadang Digital<br>© 2026 · Kelurahan Balai Gadang, Kota Padang</div></div></footer>
+  <script src="config.js"></script><script>
+    const fmt = n => n == null ? "—" : Number(n).toLocaleString("id-ID");
+    function setText(id,v,suffix=""){const el=document.getElementById(id);if(el)el.textContent=v==null?"—":fmt(v)+suffix;}
+    async function loadPortal(){
+      const cfg=window.BG_CONFIG||{};
+      if(!cfg.url||!cfg.anonKey||!window.supabase){document.getElementById("connection").textContent="Mode prototipe: hubungkan project Supabase dan isi config.js untuk memuat data resmi.";return;}
+      const db=window.supabase.createClient(cfg.url,cfg.anonKey);
+      document.getElementById("connection").textContent="Menghubungkan ke database Balai Gadang Dalam Angka…";
+      const year=Number(document.getElementById("year").value);
+      try{
+        const {data:demo,error:de}=await db.from("v_demografi_publik").select("*").eq("tahun",year).maybeSingle(); if(de) throw de;
+        if(demo){setText("population",demo.jumlah_penduduk);setText("households",demo.jumlah_kk);}
+        const {data:kost,error:ke}=await db.from("v_kost_ringkasan_publik").select("*").eq("tahun",year).maybeSingle();if(ke)throw ke;
+        if(kost){setText("kosts",kost.jumlah_kost);setText("rooms",kost.kamar_tersedia);setText("occupied",kost.kamar_terisi);setText("vacant",kost.kamar_kosong);setText("occupancy",kost.okupansi_persen,"%");document.getElementById("median-rent").textContent=kost.median_tarif==null?"—":"Rp "+fmt(kost.median_tarif);}
+        const {data:biz}=await db.from("v_ekonomi_publik").select("*").eq("tahun",year).maybeSingle();if(biz){setText("umkm",biz.jumlah_umkm);setText("business-types",biz.jumlah_kategori);setText("employed",biz.penduduk_bekerja);}
+        const {data:fac}=await db.from("v_fasilitas_publik").select("*").eq("tahun",year).maybeSingle();if(fac){setText("facilities",fac.jumlah_fasilitas);}
+        const {data:env}=await db.from("v_lingkungan_publik").select("*").eq("tahun",year).maybeSingle();if(env){setText("tree-cover",env.tutupan_pohon_ha);setText("agroforestry",env.agroforestri_ha);setText("carbon",env.stok_karbon_tco2e);setText("plots",env.jumlah_petak);}
+        document.getElementById("connection").textContent="Terhubung ke database. Angka yang tampil mengikuti data yang telah dipublikasikan dan diverifikasi.";
+      }catch(e){document.getElementById("connection").textContent="Database belum siap atau kebijakan akses belum dikonfigurasi: "+(e.message||"periksa konfigurasi Supabase");}
+    }
+    document.getElementById("year").addEventListener("change",loadPortal);loadPortal();
+  </script>
 </body></html>
