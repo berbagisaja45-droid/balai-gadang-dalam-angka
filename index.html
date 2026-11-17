@@ -257,8 +257,30 @@ restartOfficialTimer();
 // Sinkronisasi menu aktif berdasarkan posisi scroll.
 const navLinks=[...document.querySelectorAll("nav a[href^='#']")];
 const navSections=navLinks.map(link=>document.querySelector(link.getAttribute("href"))).filter(Boolean);
-function updateActiveNav(){const marker=window.scrollY+125;let current=navSections[0];for(const section of navSections){if(section.getBoundingClientRect().top+window.scrollY<=marker)current=section;}navLinks.forEach(link=>{const active=current&&link.getAttribute("href")==="#"+current.id;link.classList.toggle("active",Boolean(active));if(active)link.setAttribute("aria-current","location");else link.removeAttribute("aria-current");});}
-window.addEventListener("scroll",updateActiveNav,{passive:true});window.addEventListener("hashchange",updateActiveNav);window.addEventListener("resize",updateActiveNav);updateActiveNav();
+function updateActiveNav(){
+  // Mode halaman mengatur menu aktif berdasarkan hash.
+  if(document.querySelector("main.portal-pages")) return;
+
+  const marker=window.scrollY+125;
+  let current=navSections[0];
+
+  for(const section of navSections){
+    if(section.getBoundingClientRect().top+window.scrollY<=marker)
+      current=section;
+  }
+
+  navLinks.forEach(link=>{
+    const active=current&&link.getAttribute("href")==="#"+current.id;
+    link.classList.toggle("active",Boolean(active));
+    if(active) link.setAttribute("aria-current","location");
+    else link.removeAttribute("aria-current");
+  });
+}
+
+window.addEventListener("scroll",updateActiveNav,{passive:true});
+window.addEventListener("hashchange",updateActiveNav);
+window.addEventListener("resize",updateActiveNav);
+updateActiveNav();
 
 // Peta interaktif dengan layer batas referensi BIG 2020.
 (function initBalaiGadangMap(){
