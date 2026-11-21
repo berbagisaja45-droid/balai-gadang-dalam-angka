@@ -55,7 +55,7 @@ footer{background:#103e32;color:#d9e9e0;padding:25px 0;font-size:11px}.foot{disp
 <div class="meta"><span class="chip">◉ Data wilayah</span><span class="chip">▦ Statistik tahunan</span><span class="chip">⌖ Peta digital</span></div>
 </div></header>
 <nav aria-label="Navigasi utama"><div class="wrap navin">
-<a class="active" href="#ringkasan">Ringkasan</a><a href="#profil">Profil Kelurahan</a><a href="#pemerintahan">Pemerintahan</a><a href="#layanan-publik">Layanan Publik & Darurat</a><a href="#sejarah-wisata">Sejarah & Wisata</a><a href="#demografi">Demografi</a><a href="#kost">Rumah Kost</a><a href="#ekonomi">Ekonomi</a><a href="#fasilitas">Fasilitas</a><a href="#lingkungan">Lingkungan</a><a href="#carbon-app">Balai Gadang Carbon</a><a href="#peta">Peta Digital</a>
+<a class="active" href="#ringkasan">Ringkasan</a><a href="#profil">Profil Kelurahan</a><a href="#pemerintahan">Pemerintahan</a><a href="#layanan-publik">Layanan Publik & Darurat</a><a href="#sejarah-wisata">Sejarah & Wisata</a><a href="#demografi">Demografi</a><a href="#kost">Rumah Kost</a><a href="#ekonomi">Ekonomi</a><a href="#fasilitas">Fasilitas</a><a href="#lingkungan">Lingkungan</a><a href="#carbon-app">Balai Gadang Carbon</a><a href="#peta">Peta Digital</a><a href="#wisata">Smart Tourism</a>
 </div></nav>
 <main class="wrap">
 <div class="section-head" id="ringkasan"><div><h2>Ringkasan Wilayah</h2><div class="sub">Indikator utama Kelurahan Balai Gadang</div></div><select class="year" id="year"><option value="2026">Tahun 2026</option><option value="2025">Tahun 2025</option><option value="2024">Tahun 2024</option><option value="2023">Tahun 2023</option></select></div>
@@ -310,92 +310,70 @@ updateActiveNav();
  <script src="tourism-module.js"></script>
  
 <style>
-/* MODE NAVIGASI PER HALAMAN */
-main.portal-pages > * {
-  display: none !important;
-}
-
-main.portal-pages > *.portal-page-active {
-  display: block !important;
-}
+main.portal-pages > * { display:none !important; }
+main.portal-pages > *.portal-page-active { display:block !important; }
+main.portal-pages > .portal-page-active { animation:portalPageIn .18s ease-out; }
+@keyframes portalPageIn { from { opacity:.65; transform:translateY(4px); } to { opacity:1; transform:none; } }
 </style>
-
 <script>
 (function () {
+  "use strict";
   const main = document.querySelector("main");
   const nav = document.querySelector("nav .navin");
-
   if (!main || !nav) return;
-
   main.classList.add("portal-pages");
 
-  function renderPage() {
-    // Setiap section menjadi satu halaman.
-    main.querySelectorAll(":scope > section[id]").forEach(section => {
-      section.dataset.page = section.id;
-    });
-
-    // Halaman Ringkasan terdiri dari judul dan kartu indikator.
+  function collectPages() {
+    main.querySelectorAll(":scope > section[id]").forEach(section => section.dataset.page = section.id);
     const summary = document.getElementById("ringkasan");
-    if (summary) {
+    if (summary && main.contains(summary)) {
       summary.dataset.page = "ringkasan";
       const next = summary.nextElementSibling;
-      if (next && next.classList.contains("grid")) {
-        next.dataset.page = "ringkasan";
-      }
+      if (next && next.classList.contains("grid")) next.dataset.page = "ringkasan";
     }
+    return new Set(Array.from(main.querySelectorAll(":scope > [data-page]")).map(el => el.dataset.page));
+  }
 
-    const pages = new Set(
-      [...main.querySelectorAll(":scope > [data-page]")]
-        .map(el => el.dataset.page)
-    );
-
-    let current = location.hash.replace("#", "") || "ringkasan";
-    if (!pages.has(current)) current = "ringkasan";
+  function renderPage() {
+    const pages = collectPages();
+    const requested = decodeURIComponent(location.hash.slice(1) || "ringkasan");
+    const current = pages.has(requested) ? requested : "ringkasan";
+    if (requested !== current && location.hash) history.replaceState(null, "", location.pathname + location.search + "#ringkasan");
 
     main.querySelectorAll(":scope > *").forEach(el => {
       const active = el.dataset.page === current;
       el.classList.toggle("portal-page-active", active);
       el.setAttribute("aria-hidden", active ? "false" : "true");
+      if ("inert" in el) el.inert = !active;
     });
-
     nav.querySelectorAll("a[href^='#']").forEach(link => {
       const active = link.getAttribute("href") === "#" + current;
       link.classList.toggle("active", active);
-
       if (active) link.setAttribute("aria-current", "page");
       else link.removeAttribute("aria-current");
     });
-
     window.scrollTo(0, 0);
-
-    // Menyesuaikan ukuran peta setelah halaman dibuka.
-    setTimeout(() => window.dispatchEvent(new Event("resize")), 150);
+    window.dispatchEvent(new Event("resize"));
+    document.dispatchEvent(new CustomEvent("portal:pagechange", { detail:{page:current} }));
   }
 
-  nav.addEventListener("click", function (event) {
+  nav.addEventListener("click", event => {
     const link = event.target.closest("a[href^='#']");
-    if (!link) return;
-
+    if (!link || !nav.contains(link)) return;
     const target = link.getAttribute("href").slice(1);
-    if (!main.querySelector('[id="' + target + '"]')) return;
-
+    if (!target) return;
     event.preventDefault();
-
-    if (location.hash === "#" + target) {
-      renderPage();
-    } else {
-      location.hash = target;
-    }
+    if (location.hash === "#" + target) renderPage();
+    else location.hash = target;
   });
-
   window.addEventListener("hashchange", renderPage);
-
-  // Menangani halaman Smart Tourism yang dibuat secara dinamis.
-  new MutationObserver(renderPage).observe(main, {
-    childList: true
+  window.addEventListener("popstate", renderPage);
+  const observer = new MutationObserver(() => {
+    collectPages();
+    const hash = location.hash.slice(1);
+    if (hash && main.querySelector(':scope > section[id="' + CSS.escape(hash) + '"]')) renderPage();
   });
-
+  observer.observe(main, {childList:true});
   renderPage();
 })();
 </script>
