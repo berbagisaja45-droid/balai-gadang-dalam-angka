@@ -44,7 +44,20 @@
       form.append(select("Status verifikasi","status_verifikasi",statusOpts));const b=el("button","btn","Simpan UMKM");b.type="submit";form.append(b);const msg=el("p","sub","");form.append(msg);work.append(form);
       form.addEventListener("submit",async e=>{e.preventDefault();b.disabled=true;const d=Object.fromEntries(new FormData(form));d.tahun=Number(d.tahun);d.latitude=d.latitude?Number(d.latitude):null;d.longitude=d.longitude?Number(d.longitude):null;try{const {error}=await db.from("umkm").insert(d);if(error)throw error;msg.textContent="Data UMKM tersimpan.";form.reset();}catch(err){msg.textContent=err.message;}finally{b.disabled=false;}});
       const list=el("div","card");list.append(el("h3","","Daftar data UMKM"));work.append(list);
-      db.from("umkm").select("id,nama_usaha,kode_usaha,status_verifikasi").order("created_at",{ascending:false}).limit(100).then(({data,error})=>{if(error){list.append(el("p","sub",error.message));return;}data.forEach(x=>list.append(el("p","sub",(x.nama_usaha||x.kode_usaha)+" · "+x.status_verifikasi)));});
+      async function loadUmkm(){
+        const {data,error}=await db.from("umkm").select("id,nama_usaha,kode_usaha,status_verifikasi").order("created_at",{ascending:false}).limit(100);
+        list.querySelectorAll(".bg-admin-row").forEach(n=>n.remove());
+        if(error){list.append(el("p","sub",error.message));return;}
+        data.forEach(x=>{
+          const line=el("div","bg-admin-row");line.append(el("span","", (x.nama_usaha||x.kode_usaha)+" · "+x.status_verifikasi));
+          if(profile.role==="admin"||profile.role==="verifikator"){
+            const s=el("select");[["draft","Draft"],["review","Review"],["verified","Terverifikasi"],["rejected","Ditolak"]].forEach(([v,t])=>{const o=el("option");o.value=v;o.textContent=t;s.append(o);});
+            s.value=x.status_verifikasi;s.onchange=async()=>{const {error}=await db.from("umkm").update({status_verifikasi:s.value,updated_at:new Date().toISOString()}).eq("id",x.id);if(error){alert(error.message);s.value=x.status_verifikasi;}else line.querySelector("span").textContent=(x.nama_usaha||x.kode_usaha)+" · "+s.value;};line.append(s);
+          }
+          list.append(line);
+        });
+      }
+      loadUmkm();
     }
     newsTab.onclick=()=>{newsTab.className="btn";umkmTab.className="btn secondary";showNews();};umkmTab.onclick=()=>{umkmTab.className="btn";newsTab.className="btn secondary";showUmkm();};showNews();
   }
