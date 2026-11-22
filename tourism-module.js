@@ -63,7 +63,8 @@
       .bg-tourism-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(225px,1fr));gap:13px}
       .bg-tourism-card{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;display:flex;flex-direction:column}
       .bg-tourism-card>img,.bg-tourism-placeholder{height:165px;width:100%;object-fit:cover;background:#e8f0eb}
-      .bg-tourism-placeholder{display:grid;place-items:center;color:#6d8879;font-size:36px}\n      #wisata{min-width:0;max-width:100%;overflow:hidden}\n      #wisata .card{min-width:0}\n      .bg-tourism-empty{border:1px dashed #cbd9d0;border-radius:12px;background:#f8fbf8;padding:22px 18px;text-align:center;color:#62756b;line-height:1.7;font-size:13px}\n      .bg-tourism-empty strong{display:block;color:#17352e;font:800 16px Manrope;margin-bottom:6px}\n      .bg-tourism-empty small{display:block;color:#71817a;font-size:11px;margin-top:7px}
+      .bg-tourism-placeholder{display:grid;place-items:center;color:#6d8879;font-size:36px}
+      #wisata{min-width:0;max-width:100%;overflow:hidden}\n      #wisata .card{min-width:0}\n      .bg-tourism-empty{border:1px dashed #cbd9d0;border-radius:12px;background:#f8fbf8;padding:22px 18px;text-align:center;color:#62756b;line-height:1.7;font-size:13px}\n      .bg-tourism-empty strong{display:block;color:#17352e;font:800 16px Manrope;margin-bottom:6px}\n      .bg-tourism-empty small{display:block;color:#71817a;font-size:11px;margin-top:7px}
       .bg-tourism-body{padding:14px;display:flex;flex-direction:column;gap:8px;flex:1}
       .bg-tourism-body h3{margin:0;font:800 16px Manrope}
       .bg-tourism-body p{margin:0;color:var(--muted);font-size:12px;line-height:1.7}
@@ -145,9 +146,15 @@
       );
       grid.replaceChildren(); count.textContent = visible.length + " destinasi";
       if (!visible.length) {
-        const empty = document.createElement("div"); empty.className = "placeholder"; empty.style.gridColumn = "1/-1";
-        empty.textContent = rows.length ? "Tidak ada destinasi yang cocok." :
-          "Belum ada destinasi berstatus published. Data draft tetap tersembunyi dari pengunjung.";
+        const empty = document.createElement("div"); empty.className = "bg-tourism-empty"; empty.style.gridColumn = "1/-1";
+        if (rows.length) {
+          empty.textContent = "Tidak ada destinasi yang cocok. Coba kata kunci atau kategori lain.";
+        } else {
+          const heading = document.createElement("strong"); heading.textContent = "Direktori wisata sedang disiapkan";
+          const message = document.createElement("span"); message.textContent = "Koneksi ke database berhasil. Destinasi akan tampil setelah data lokasi, informasi kunjungan, dan dokumentasinya selesai diverifikasi serta dipublikasikan oleh pengelola.";
+          const note = document.createElement("small"); note.textContent = "Data yang masih dalam tahap penyusunan tidak ditampilkan kepada pengunjung.";
+          empty.append(heading, message, note);
+        }
         grid.append(empty); return;
       }
       visible.forEach(d => {
@@ -187,7 +194,7 @@
       if (!window.L) { mapStatus.textContent = "Pustaka peta belum tersedia."; return; }
       if (!mapped.length) {
         el.style.display = "none";
-        mapStatus.textContent = "Belum ada destinasi published dengan koordinat. Pin muncul setelah koordinat diverifikasi.";
+        mapStatus.textContent = "Peta belum menampilkan pin karena belum ada destinasi published dengan koordinat yang telah diverifikasi. Peta akan terisi otomatis setelah pengelola memublikasikan titik yang valid.";
         return;
       }
       el.style.display = "block";
