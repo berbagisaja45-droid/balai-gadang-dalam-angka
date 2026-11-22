@@ -13,6 +13,7 @@
       data.forEach(item=>{
         const card=el("article","card");card.style.padding="0";card.style.overflow="hidden";
         if(item.cover_image_url){const im=el("img");im.src=item.cover_image_url;im.alt=item.title;im.loading="lazy";im.style.cssText="width:100%;max-height:230px;object-fit:cover";card.append(im);}
+        if(item.youtube_url){try{const u=new URL(item.youtube_url);let vid="";if(u.hostname==="youtu.be")vid=u.pathname.slice(1);else if(["youtube.com","www.youtube.com","m.youtube.com"].includes(u.hostname))vid=u.searchParams.get("v")||((u.pathname.startsWith("/embed/"))?u.pathname.split("/")[2]:"");if(/^[A-Za-z0-9_-]{11}$/.test(vid)){const frame=el("iframe");frame.src="https://www.youtube-nocookie.com/embed/"+vid;frame.title=item.title;frame.loading="lazy";frame.allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture;web-share";frame.allowFullscreen=true;frame.style.cssText="width:100%;aspect-ratio:16/9;border:0";card.append(frame);}}catch(_){}}
         const body=el("div","");body.style.padding="17px";
         body.append(el("span","status",item.category||"Berita"),el("h3","",item.title),el("p","sub",item.excerpt||item.content||""));
         if(item.published_at)body.append(el("p","metric-note",new Date(item.published_at).toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"})));
