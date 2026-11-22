@@ -87,7 +87,7 @@
     const mapStatus = $("bg-tourism-map-status");
     let rows = [], mediaMap = {}, category = "all", map, markerLayer;
 
-    const publicUrl = path => db.storage.from("tourism-media").getPublicUrl(path).data?.publicUrl || "";
+    const publicUrl = path => /^https?:\/\//i.test(path || "") ? path : (db.storage.from("tourism-media").getPublicUrl(path).data?.publicUrl || "");
     const makePlaceholder = () => {
       const p = document.createElement("div"); p.className = "bg-tourism-placeholder"; p.textContent = "⌖"; return p;
     };
