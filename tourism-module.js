@@ -63,7 +63,7 @@
       .bg-tourism-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(225px,1fr));gap:13px}
       .bg-tourism-card{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;display:flex;flex-direction:column}
       .bg-tourism-card>img,.bg-tourism-placeholder{height:165px;width:100%;object-fit:cover;background:#e8f0eb}
-      .bg-tourism-placeholder{display:grid;place-items:center;color:#6d8879;font-size:36px}
+      .bg-tourism-placeholder{display:grid;place-items:center;color:#6d8879;font-size:36px}\n      #wisata{min-width:0;max-width:100%;overflow:hidden}\n      #wisata .card{min-width:0}\n      .bg-tourism-empty{border:1px dashed #cbd9d0;border-radius:12px;background:#f8fbf8;padding:22px 18px;text-align:center;color:#62756b;line-height:1.7;font-size:13px}\n      .bg-tourism-empty strong{display:block;color:#17352e;font:800 16px Manrope;margin-bottom:6px}\n      .bg-tourism-empty small{display:block;color:#71817a;font-size:11px;margin-top:7px}
       .bg-tourism-body{padding:14px;display:flex;flex-direction:column;gap:8px;flex:1}
       .bg-tourism-body h3{margin:0;font:800 16px Manrope}
       .bg-tourism-body p{margin:0;color:var(--muted);font-size:12px;line-height:1.7}
