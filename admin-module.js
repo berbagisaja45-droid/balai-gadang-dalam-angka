@@ -12,7 +12,48 @@
   const login=el("form","card");login.append(el("h2","","Admin Panel Balai Gadang"));
   login.append(el("p","sub","Masuk menggunakan akun staf yang sudah terdaftar di Supabase Auth dan memiliki peran admin, data_entry, atau verifikator."));
   login.append(field("Email staf","email","email",true),field("Password","password","password",true));
-  const submit=el("button","btn","Masuk");submit.type="submit";login.append(submit,message);root.append(login);
+  const submit=el("button","btn","Masuk");submit.type="submit";login.append(submit,message);
+  const forgot=el("button","btn secondary","Lupa Password?");forgot.type="button";forgot.style.marginTop="10px";login.append(forgot);root.append(login);
+  forgot.addEventListener("click",async()=>{
+    const email=login.elements.email.value.trim();
+    if(!email){message.textContent="Masukkan email staf terlebih dahulu.";login.elements.email.focus();return;}
+    forgot.disabled=true;message.textContent="Mengirim tautan pemulihan ke email…";
+    try{
+      const redirectTo=location.origin+location.pathname+"?reset=1";
+      const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo});
+      if(error)throw error;
+      message.textContent="Jika email terdaftar, tautan pemulihan telah dikirim. Periksa Kotak Masuk dan Spam Gmail.";
+    }catch(err){message.textContent=err.message||"Gagal mengirim tautan pemulihan.";}
+    finally{forgot.disabled=false;}
+  });
+  function showPasswordRecovery(){
+    root.replaceChildren();
+    const form=el("form","card");form.append(el("h2","","Buat Password Baru"));
+    form.append(el("p","sub","Masukkan password baru untuk akun pengelola Balai Gadang."));
+    const pw=field("Password baru (minimal 8 karakter)","new_password","password",true);pw.querySelector("input").minLength=8;
+    const confirm=field("Ulangi password baru","confirm_password","password",true);confirm.querySelector("input").minLength=8;
+    form.append(pw,confirm);
+    const save=el("button","btn","Simpan Password Baru");save.type="submit";const status=el("p","sub","");form.append(save,status);root.append(form);
+    form.addEventListener("submit",async e=>{
+      e.preventDefault();const a=form.elements.new_password.value,b=form.elements.confirm_password.value;
+      if(a.length<8){status.textContent="Password minimal 8 karakter.";return;}
+      if(a!==b){status.textContent="Kedua password belum sama.";return;}
+      save.disabled=true;status.textContent="Memperbarui password…";
+      try{
+        const {error}=await db.auth.updateUser({password:a});if(error)throw error;
+        status.textContent="Password berhasil diperbarui. Silakan masuk menggunakan password baru.";
+        await db.auth.signOut();
+        setTimeout(()=>location.replace(location.pathname+"#admin"),1200);
+      }catch(err){status.textContent=err.message||"Gagal memperbarui password.";}
+      finally{save.disabled=false;}
+    });
+  }
+  db.auth.onAuthStateChange((event)=>{
+    if(event==="PASSWORD_RECOVERY")showPasswordRecovery();
+  });
+  if(new URLSearchParams(location.hash.slice(1)).get("type")==="recovery"){
+    db.auth.getSession().then(({data})=>{if(data.session)showPasswordRecovery();});
+  }
   login.addEventListener("submit",async e=>{
     e.preventDefault();submit.disabled=true;message.textContent="Memeriksa akun…";
     try{
