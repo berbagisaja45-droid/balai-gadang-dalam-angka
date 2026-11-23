@@ -26,7 +26,7 @@
     root.replaceChildren();
     const top=el("div","card");top.append(el("h2","","Panel Pengelola"),el("p","sub",(profile.full_name||"Petugas")+" · "+profile.role));
     const out=el("button","btn secondary","Keluar");out.onclick=async()=>{await db.auth.signOut();location.reload();};top.append(out);root.append(top);
-    const tabs=el("div","actions");const newsTab=el("button","btn","Kelola Berita");const umkmTab=el("button","btn secondary","Kelola UMKM");tabs.append(newsTab,umkmTab);root.append(tabs);
+    const tabs=el("div","actions");const newsTab=el("button","btn","Kelola Berita");const umkmTab=el("button","btn secondary","Kelola UMKM");const agendaTab=el("button","btn secondary","Agenda & Pengumuman");tabs.append(newsTab,umkmTab);if(["admin","verifikator"].includes(profile.role))tabs.append(agendaTab);root.append(tabs);
     const work=el("div","");root.append(work);
     function showNews(){
       work.replaceChildren();const form=el("form","card");form.append(el("h3","","Tambah Berita Kelurahan"));
@@ -59,7 +59,72 @@
       }
       loadUmkm();
     }
-    newsTab.onclick=()=>{newsTab.className="btn";umkmTab.className="btn secondary";showNews();};umkmTab.onclick=()=>{umkmTab.className="btn";newsTab.className="btn secondary";showUmkm();};showNews();
+    function showAgenda(){
+      work.replaceChildren();
+      const panel=el("div","two");
+      const agendaForm=el("form","card");
+      agendaForm.append(el("h3","","Tambah Agenda Kegiatan"));
+      agendaForm.append(field("Judul kegiatan","judul","text",true),field("Kategori","kategori"),area("Deskripsi kegiatan","deskripsi"),field("Lokasi","lokasi"),field("Mulai kegiatan","mulai_pada","datetime-local",true),field("Selesai kegiatan (opsional)","selesai_pada","datetime-local"));
+      agendaForm.append(select("Status publikasi","status",[["draft","Draft"],["published","Publikasikan"],["archived","Arsip"]]));
+      const ab=el("button","btn","Simpan agenda");ab.type="submit";const am=el("p","sub","");agendaForm.append(ab,am);
+      agendaForm.addEventListener("submit",async e=>{
+        e.preventDefault();ab.disabled=true;
+        const d=Object.fromEntries(new FormData(agendaForm));
+        d.mulai_pada=new Date(d.mulai_pada).toISOString();
+        d.selesai_pada=d.selesai_pada?new Date(d.selesai_pada).toISOString():null;
+        try{const {error}=await db.from("agenda_kelurahan").insert(d);if(error)throw error;am.textContent="Agenda berhasil disimpan.";agendaForm.reset();loadAgenda();}
+        catch(err){am.textContent=err.message||"Gagal menyimpan agenda.";}
+        finally{ab.disabled=false;}
+      });
+      const announcementForm=el("form","card");
+      announcementForm.append(el("h3","","Tambah Pengumuman"));
+      announcementForm.append(field("Judul pengumuman","judul","text",true),field("Kategori","kategori"),area("Isi pengumuman","isi"),select("Prioritas","prioritas",[["normal","Normal"],["penting","Penting"],["mendesak","Mendesak"]]),field("Mulai berlaku","berlaku_mulai","datetime-local"),field("Berlaku sampai (opsional)","berlaku_sampai","datetime-local"));
+      announcementForm.append(select("Status publikasi","status",[["draft","Draft"],["published","Publikasikan"],["archived","Arsip"]]));
+      const pb=el("button","btn","Simpan pengumuman");pb.type="submit";const pm=el("p","sub","");announcementForm.append(pb,pm);
+      announcementForm.addEventListener("submit",async e=>{
+        e.preventDefault();pb.disabled=true;
+        const d=Object.fromEntries(new FormData(announcementForm));
+        d.berlaku_mulai=d.berlaku_mulai?new Date(d.berlaku_mulai).toISOString():new Date().toISOString();
+        d.berlaku_sampai=d.berlaku_sampai?new Date(d.berlaku_sampai).toISOString():null;
+        try{const {error}=await db.from("pengumuman_kelurahan").insert(d);if(error)throw error;pm.textContent="Pengumuman berhasil disimpan.";announcementForm.reset();loadAnnouncements();}
+        catch(err){pm.textContent=err.message||"Gagal menyimpan pengumuman.";}
+        finally{pb.disabled=false;}
+      });
+      panel.append(agendaForm,announcementForm);work.append(panel);
+      const lists=el("div","two");const agendaList=el("div","card");const annList=el("div","card");
+      agendaList.append(el("h3","","Daftar Agenda"));annList.append(el("h3","","Daftar Pengumuman"));
+      lists.append(agendaList,annList);work.append(lists);
+      async function loadAgenda(){
+        agendaList.querySelectorAll(".bg-admin-row").forEach(n=>n.remove());
+        const {data,error}=await db.from("agenda_kelurahan").select("id,judul,status,mulai_pada").order("mulai_pada",{ascending:false}).limit(100);
+        if(error){agendaList.append(el("p","sub",error.message));return;}
+        (data||[]).forEach(x=>{
+          const line=el("div","bg-admin-row");line.append(el("span","",x.judul+" · "+new Date(x.mulai_pada).toLocaleString("id-ID")+" · "+x.status));
+          const s=el("select");[["draft","Draft"],["published","Terbit"],["archived","Arsip"]].forEach(([v,t])=>{const o=el("option");o.value=v;o.textContent=t;s.append(o);});s.value=x.status;
+          s.onchange=async()=>{const {error}=await db.from("agenda_kelurahan").update({status:s.value,updated_at:new Date().toISOString()}).eq("id",x.id);if(error){alert(error.message);s.value=x.status;}else loadAgenda();};
+          line.append(s);agendaList.append(line);
+        });
+      }
+      async function loadAnnouncements(){
+        annList.querySelectorAll(".bg-admin-row").forEach(n=>n.remove());
+        const {data,error}=await db.from("pengumuman_kelurahan").select("id,judul,status,prioritas,berlaku_mulai").order("berlaku_mulai",{ascending:false}).limit(100);
+        if(error){annList.append(el("p","sub",error.message));return;}
+        (data||[]).forEach(x=>{
+          const line=el("div","bg-admin-row");line.append(el("span","",x.judul+" · "+x.prioritas+" · "+x.status));
+          const s=el("select");[["draft","Draft"],["published","Terbit"],["archived","Arsip"]].forEach(([v,t])=>{const o=el("option");o.value=v;o.textContent=t;s.append(o);});s.value=x.status;
+          s.onchange=async()=>{const {error}=await db.from("pengumuman_kelurahan").update({status:s.value,updated_at:new Date().toISOString()}).eq("id",x.id);if(error){alert(error.message);s.value=x.status;}else loadAnnouncements();};
+          line.append(s);annList.append(line);
+        });
+      }
+      loadAgenda();loadAnnouncements();
+    }
+    function activateTab(active){
+      [newsTab,umkmTab,agendaTab].filter(Boolean).forEach(t=>t.className=t===active?"btn":"btn secondary");
+    }
+    newsTab.onclick=()=>{activateTab(newsTab);showNews();};
+    umkmTab.onclick=()=>{activateTab(umkmTab);showUmkm();};
+    if(agendaTab)agendaTab.onclick=()=>{activateTab(agendaTab);showAgenda();};
+    showNews();
   }
   db.auth.getSession().then(async({data})=>{if(!data.session)return;const {data:p}=await db.from("app_profiles").select("full_name,role").eq("id",data.session.user.id).single();if(p&&["admin","data_entry","verifikator"].includes(p.role))renderWorkspace(p);});
 })();
