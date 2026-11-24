@@ -344,6 +344,11 @@
       const refresh=el("button","btn secondary","Perbarui Monitoring");refresh.onclick=load;panel.append(refresh);
       const status=el("p","sub","Memuat data…");panel.append(status);work.append(panel);
       const metrics=el("div","grid");work.append(metrics);
+      const mapCard=el("div","card");mapCard.append(el("h3","","Peta Progres Pendataan RW"));
+      mapCard.append(el("p","sub","Peta skematik 14 RW untuk memantau progres pendataan, bukan batas/poligon administratif. Posisi kotak tidak menunjukkan lokasi geografis. Peta geografis akurat memerlukan koordinat atau shapefile resmi tiap RW."));
+      mapCard.append(el("div","sub","Hijau: ada usulan · Kuning: menunggu verifikasi · Biru: sudah diverifikasi/terbit · Abu-abu: belum ada usulan tercatat"));
+      const grid=el("div","");grid.style.cssText="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-top:14px";
+      mapCard.append(grid);work.append(mapCard);
       const tableCard=el("div","card");tableCard.append(el("h3","","Rekap per RW"));work.append(tableCard);
       const accountsCard=el("div","card");accountsCard.append(el("h3","","Akun Petugas Terdaftar"));work.append(accountsCard);
       async function load(){
@@ -357,6 +362,7 @@
         if(pe){status.textContent="Gagal memuat akun petugas: "+pe.message;return;}
         const rows=subs||[],users=profiles||[];
         const rwMap=new Map();
+        for(let n=1;n<=14;n++){const rw="RW "+String(n).padStart(2,"0");rwMap.set(rw,{rw,total:0,umkm:0,fasilitas:0,demografi:0,lingkungan:0,submitted:0,lpm_verified:0,verified:0,published:0,rejected:0});}
         rows.forEach(x=>{
           const rw=String(x.source_rw||"Belum dicantumkan").trim();
           if(!rwMap.has(rw))rwMap.set(rw,{rw,total:0,umkm:0,fasilitas:0,demografi:0,lingkungan:0,submitted:0,lpm_verified:0,verified:0,published:0,rejected:0});
@@ -366,6 +372,11 @@
           if(x.status==="verified")z.verified++;
           if(x.status==="rejected")z.rejected++;
           if(x.published_at)z.published++;
+        });
+        grid.replaceChildren();
+        [...rwMap.values()].forEach(x=>{
+          const tile=el("div","");tile.style.cssText="border:1px solid #dbe7df;border-radius:12px;padding:12px;background:"+(x.published>0?"#e4f3e9":x.lpm_verified>0||x.verified>0?"#e8f1fb":x.submitted>0?"#fff4d8":x.total>0?"#e9f4ed":"#f1f3f2");
+          tile.append(el("strong","",x.rw),el("div","",x.total+" usulan"),el("div","sub",x.published>0?"Sudah terbit":x.lpm_verified>0?"Diverifikasi LPM":x.verified>0?"Disetujui admin":x.submitted>0?"Menunggu LPM":x.total>0?"Ada usulan":"Belum ada usulan tercatat"));grid.append(tile);
         });
         const kpis=[
           ["Total usulan",rows.length],["Menunggu LPM",rows.filter(x=>x.status==="submitted").length],
@@ -389,7 +400,7 @@
         });
         if(!at.childNodes.length)at.append(el("p","sub","","Belum ada akun petugas yang terdaftar."));
         accountsCard.append(at);
-        status.textContent="Diperbarui "+new Date().toLocaleString("id-ID")+". Total "+rows.length+" usulan dari "+rwMap.size+" kelompok RW/sumber wilayah. Akun terdaftar: "+users.length+".";
+        status.textContent="Diperbarui "+new Date().toLocaleString("id-ID")+". Total "+rows.length+" usulan. RW yang tercatat memiliki usulan: "+[...rwMap.values()].filter(x=>x.total>0).length+" dari 14 RW. Akun terdaftar: "+users.length+".";
       }
       load();
     }
