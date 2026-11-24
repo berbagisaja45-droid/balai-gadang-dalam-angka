@@ -240,7 +240,7 @@
       const preview=el("div","");const check=el("button","btn secondary","Periksa File");check.type="button";const send=el("button","btn","Kirim Baris Valid ke Verifikasi LPM");send.type="button";send.disabled=true;
       const msg=el("p","sub","Format kolom harus menggunakan nama field yang dijelaskan pada template.");
       panel.append(category,submitter,rw,source,instruction,fileLabel,check,preview,send,msg);work.append(panel);
-      let validRows=[],report=[];
+      let validRows=[],report=[];let importSummary=null;
       const requiredBy={
         umkm:["nama_usaha","kategori"],
         fasilitas:["nama_publik","kategori","tahun"],
@@ -305,7 +305,7 @@
             const payload={};Object.entries(clean).forEach(([k,v])=>{if(v!=="")payload[k]=numeric.has(k)?Number(String(v).replace(",",".")):String(v);});
             report.push({row:i+2,title,errors});if(!errors.length)validRows.push({title,category:category.querySelector("select").value,source_rw:rw.querySelector("input").value.trim(),submitter_name:submitter.querySelector("input").value.trim(),submitter_note:source.querySelector("textarea").value.trim()||null,payload,status:"submitted"});
           });
-          const ok=report.filter(x=>!x.errors.length).length,bad=report.length-ok;
+          const ok=report.filter(x=>!x.errors.length).length,bad=report.length-ok;importSummary={total:report.length,valid:ok,invalid:bad};
           const summary=el("div","note",report.length+" baris dibaca · "+ok+" lolos · "+bad+" perlu diperbaiki.");
           preview.append(summary);
           const table=el("div","tablewrap");const t=el("table");const head=el("thead");const hr=el("tr");["Baris","Identitas","Hasil pemeriksaan"].forEach(x=>hr.append(el("th","",x)));head.append(hr);t.append(head);const body=el("tbody");
@@ -321,10 +321,22 @@
           const user=(await db.auth.getUser()).data.user;
           const rows=validRows.map(x=>({...x,submitted_by:user.id}));
           const {error}=await db.from("data_submissions").insert(rows);if(error)throw error;
-          msg.textContent=rows.length+" baris berhasil dikirim ke antrean verifikasi LPM. Data belum dipublikasikan.";
-          validRows=[];preview.replaceChildren();
+          const log={category:rows[0].category,file_name:file.files[0]?.name||"file tidak diketahui",submitter_name:submitterInput.value.trim(),source_rw:rwInput.value.trim(),total_rows:importSummary?.total||rows.length,valid_rows:importSummary?.valid||rows.length,invalid_rows:importSummary?.invalid||0,submitted_rows:rows.length,submitted_by:user.id};
+          const {error:logError}=await db.from("import_audit_log").insert(log);
+          msg.textContent=rows.length+" baris berhasil dikirim ke antrean verifikasi LPM. Data belum dipublikasikan."+(logError?" Riwayat impor gagal disimpan: "+logError.message:" Riwayat impor tercatat.");
+          validRows=[];preview.replaceChildren();loadImportHistory();
         }catch(err){msg.textContent="Gagal mengirim: "+err.message;send.disabled=false;}
       };
+    }
+      const history=el("div","card");history.append(el("h3","","Riwayat Import Data"));work.append(history);
+      async function loadImportHistory(){
+        history.querySelectorAll(".bg-admin-row").forEach(n=>n.remove());
+        const {data,error}=await db.from("import_audit_log").select("file_name,category,submitter_name,source_rw,total_rows,valid_rows,invalid_rows,submitted_rows,created_at").order("created_at",{ascending:false}).limit(100);
+        if(error){history.append(el("p","sub","Riwayat belum dapat dimuat: "+error.message));return;}
+        if(!data?.length){history.append(el("p","sub","Belum ada riwayat impor."));return;}
+        data.forEach(x=>{const row=el("div","bg-admin-row");row.style.flexDirection="column";row.style.alignItems="stretch";row.append(el("strong","",x.file_name+" · "+x.category.toUpperCase()));row.append(el("span","", "Pengisi: "+x.submitter_name+" · "+x.source_rw+" · "+new Date(x.created_at).toLocaleString("id-ID")));row.append(el("span","sub","Dibaca "+x.total_rows+" · Lolos "+x.valid_rows+" · Bermasalah "+x.invalid_rows+" · Dikirim "+x.submitted_rows));history.append(row);});
+      }
+      loadImportHistory();
     }
     function showReview(){
       work.replaceChildren();const list=el("div","card");
