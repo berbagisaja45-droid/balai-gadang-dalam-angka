@@ -67,7 +67,7 @@
     root.replaceChildren();
     const top=el("div","card");top.append(el("h2","","Panel Pengelola"),el("p","sub",(profile.full_name||"Petugas")+" · "+profile.role));
     const out=el("button","btn secondary","Keluar");out.onclick=async()=>{await db.auth.signOut();location.reload();};top.append(out);root.append(top);
-    const tabs=el("div","actions");const newsTab=el("button","btn","Kelola Berita");const umkmTab=el("button","btn secondary","Kelola UMKM");const agendaTab=el("button","btn secondary","Agenda & Pengumuman");tabs.append(newsTab,umkmTab);if(["admin","verifikator"].includes(profile.role))tabs.append(agendaTab);const auditTab=el("button","btn secondary","Audit Aktivitas");if(profile.role==="admin"||profile.role==="verifikator")tabs.append(auditTab);const usersTab=el("button","btn secondary","Kelola Pengguna");if(profile.role==="admin")tabs.append(usersTab);const submissionsTab=el("button","btn secondary","Pendataan RW");if(["admin","data_entry"].includes(profile.role))tabs.append(submissionsTab);const importTab=el("button","btn secondary","Import & Validasi Excel");if(["admin","data_entry"].includes(profile.role))tabs.append(importTab);const reviewTab=el("button","btn secondary","Verifikasi Data");if(["admin","verifikator","lpm_verifier"].includes(profile.role))tabs.append(reviewTab);root.append(tabs);
+    const tabs=el("div","actions");const newsTab=el("button","btn","Kelola Berita");const umkmTab=el("button","btn secondary","Kelola UMKM");const agendaTab=el("button","btn secondary","Agenda & Pengumuman");tabs.append(newsTab,umkmTab);if(["admin","verifikator"].includes(profile.role))tabs.append(agendaTab);const auditTab=el("button","btn secondary","Audit Aktivitas");if(profile.role==="admin"||profile.role==="verifikator")tabs.append(auditTab);const usersTab=el("button","btn secondary","Kelola Pengguna");if(profile.role==="admin")tabs.append(usersTab);const submissionsTab=el("button","btn secondary","Pendataan RW");if(["admin","data_entry"].includes(profile.role))tabs.append(submissionsTab);const importTab=el("button","btn secondary","Import & Validasi Excel");if(["admin","data_entry"].includes(profile.role))tabs.append(importTab);const reviewTab=el("button","btn secondary","Verifikasi Data");if(["admin","verifikator","lpm_verifier"].includes(profile.role))tabs.append(reviewTab);const monitorTab=el("button","btn secondary","Monitoring Pendataan RW");if(["admin","verifikator"].includes(profile.role))tabs.append(monitorTab);root.append(tabs);
     const work=el("div","");root.append(work);
     function showNews(){
       work.replaceChildren();const form=el("form","card");form.append(el("h3","","Tambah Berita Kelurahan"));
@@ -337,6 +337,62 @@
       }
       loadImportHistory();
     }
+    function showMonitoring(){
+      work.replaceChildren();
+      const panel=el("div","card");panel.append(el("h3","","Monitoring Pendataan per RW"));
+      panel.append(el("p","sub","Pantau usulan data yang masuk, status verifikasi, publikasi, dan akun petugas. RW tanpa kiriman tidak otomatis berarti belum memiliki petugas."));
+      const refresh=el("button","btn secondary","Perbarui Monitoring");refresh.onclick=load;panel.append(refresh);
+      const status=el("p","sub","Memuat data…");panel.append(status);work.append(panel);
+      const metrics=el("div","grid");work.append(metrics);
+      const tableCard=el("div","card");tableCard.append(el("h3","","Rekap per RW"));work.append(tableCard);
+      const accountsCard=el("div","card");accountsCard.append(el("h3","","Akun Petugas Terdaftar"));work.append(accountsCard);
+      async function load(){
+        metrics.replaceChildren();tableCard.querySelectorAll(".monitor-content").forEach(n=>n.remove());accountsCard.querySelectorAll(".monitor-content").forEach(n=>n.remove());
+        status.textContent="Memuat usulan dan akun…";
+        const [{data:subs,error:se},{data:profiles,error:pe}]=await Promise.all([
+          db.from("data_submissions").select("id,category,source_rw,status,submitted_at,published_at,submitter_name,submitted_by").order("submitted_at",{ascending:false}).limit(5000),
+          db.from("app_profiles").select("id,full_name,role").order("full_name",{ascending:true}).limit(1000)
+        ]);
+        if(se){status.textContent="Gagal memuat usulan: "+se.message;return;}
+        if(pe){status.textContent="Gagal memuat akun petugas: "+pe.message;return;}
+        const rows=subs||[],users=profiles||[];
+        const rwMap=new Map();
+        rows.forEach(x=>{
+          const rw=String(x.source_rw||"Belum dicantumkan").trim();
+          if(!rwMap.has(rw))rwMap.set(rw,{rw,total:0,umkm:0,fasilitas:0,demografi:0,lingkungan:0,submitted:0,lpm_verified:0,verified:0,published:0,rejected:0});
+          const z=rwMap.get(rw);z.total++;if(z[x.category]!=null)z[x.category]++;
+          if(x.status==="submitted")z.submitted++;
+          if(x.status==="lpm_verified")z.lpm_verified++;
+          if(x.status==="verified")z.verified++;
+          if(x.status==="rejected")z.rejected++;
+          if(x.published_at)z.published++;
+        });
+        const kpis=[
+          ["Total usulan",rows.length],["Menunggu LPM",rows.filter(x=>x.status==="submitted").length],
+          ["Diverifikasi LPM",rows.filter(x=>x.status==="lpm_verified").length],
+          ["Siap / disetujui",rows.filter(x=>x.status==="verified").length],
+          ["Sudah dipublikasi",rows.filter(x=>!!x.published_at).length],
+          ["Akun petugas input",users.filter(x=>x.role==="data_entry").length]
+        ];
+        kpis.forEach(([label,value])=>{const box=el("div","card");box.append(el("p","sub",label),el("h2","",Number(value).toLocaleString("id-ID")));metrics.append(box);});
+        const t=el("table","monitor-content");const h=el("thead"),hr=el("tr");
+        ["RW","Usulan","UMKM","Fasilitas","Demografi","Lingkungan","Menunggu LPM","Diverifikasi LPM","Disetujui","Terbit","Ditolak"].forEach(x=>hr.append(el("th","",x)));h.append(hr);t.append(h);
+        const body=el("tbody");
+        [...rwMap.values()].sort((a,b)=>a.rw.localeCompare(b.rw,"id")).forEach(x=>{
+          const tr=el("tr");[x.rw,x.total,x.umkm,x.fasilitas,x.demografi,x.lingkungan,x.submitted,x.lpm_verified,x.verified,x.published,x.rejected].forEach(v=>tr.append(el("td","",String(v))));body.append(tr);
+        });
+        if(!rwMap.size){const tr=el("tr");tr.append(el("td","","Belum ada usulan pendataan."));body.append(tr);}
+        t.append(body);tableCard.append(t);
+        const at=el("div","monitor-content");
+        users.filter(x=>["admin","data_entry","verifikator","lpm_verifier"].includes(x.role)).forEach(x=>{
+          const row=el("div","bg-admin-row");row.append(el("strong","",x.full_name||"Nama belum diisi"),el("span","sub",x.role));at.append(row);
+        });
+        if(!at.childNodes.length)at.append(el("p","sub","","Belum ada akun petugas yang terdaftar."));
+        accountsCard.append(at);
+        status.textContent="Diperbarui "+new Date().toLocaleString("id-ID")+". Total "+rows.length+" usulan dari "+rwMap.size+" kelompok RW/sumber wilayah. Akun terdaftar: "+users.length+".";
+      }
+      load();
+    }
     function showReview(){
       work.replaceChildren();const list=el("div","card");
       const isLpm=profile.role==="lpm_verifier";
@@ -466,6 +522,7 @@
     if(usersTab)usersTab.onclick=()=>{activateTab(usersTab);showUsers();};
     if(submissionsTab)submissionsTab.onclick=()=>{activateTab(submissionsTab);showSubmissions();};if(importTab)importTab.onclick=()=>{activateTab(importTab);showImport();};
     if(reviewTab)reviewTab.onclick=()=>{activateTab(reviewTab);showReview();};
+    if(monitorTab)monitorTab.onclick=()=>{activateTab(monitorTab);showMonitoring();};
     showNews();
   }
   db.auth.getSession().then(async({data})=>{if(!data.session)return;const {data:p}=await db.from("app_profiles").select("full_name,role").eq("id",data.session.user.id).single();if(p&&["admin","data_entry","verifikator","lpm_verifier"].includes(p.role))renderWorkspace(p);});
