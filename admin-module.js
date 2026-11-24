@@ -200,32 +200,47 @@
       loadMine();
     }
     function showReview(){
-      work.replaceChildren();const list=el("div","card");list.append(el("h3","","Antrean Verifikasi Data RW"));list.append(el("p","sub","Periksa rincian sebelum menerima atau meminta perbaikan. Persetujuan di sini mencatat status verifikasi; belum otomatis memasukkan data ke tabel statistik publik."));
-      const refresh=el("button","btn secondary","Muat Ulang");refresh.onclick=load;list.append(refresh);const status=el("p","sub","Memuat antrean…");list.append(status);work.append(list);
+      work.replaceChildren();const list=el("div","card");
+      list.append(el("h3","","Antrean Verifikasi dan Publikasi Data RW"));
+      list.append(el("p","sub","Verifikasi memeriksa kelayakan usulan. Setelah status verified, admin/verifikator dapat menerbitkan satu kali ke tabel data terkait agar dapat dipakai dashboard."));
+      const refresh=el("button","btn secondary","Muat Ulang");refresh.onclick=load;list.append(refresh);
+      const status=el("p","sub","Memuat antrean…");list.append(status);work.append(list);
       async function load(){
-        list.querySelectorAll(".bg-admin-row").forEach(n=>n.remove());status.textContent="Memuat antrean…";
-        const {data,error}=await db.from("data_submissions").select("id,category,title,source_rw,payload,submitter_note,status,submitted_at,submitted_by").order("submitted_at",{ascending:false}).limit(150);
+        list.querySelectorAll(".bg-admin-row").forEach(n=>n.remove());status.textContent="Memuat usulan…";
+        const {data,error}=await db.from("data_submissions").select("id,category,title,source_rw,payload,submitter_note,status,submitted_at,submitted_by,review_note,published_at,published_table").order("submitted_at",{ascending:false}).limit(200);
         if(error){status.textContent="Gagal memuat antrean: "+error.message;return;}
-        const pending=(data||[]).filter(x=>x.status==="submitted"||x.status==="revision");status.textContent=pending.length+" usulan menunggu tindak lanjut.";
-        pending.forEach(x=>{
+        status.textContent=(data||[]).length+" usulan ditemukan.";
+        (data||[]).forEach(x=>{
           const row=el("div","bg-admin-row");row.style.alignItems="stretch";row.style.flexDirection="column";
           row.append(el("strong","",x.title+" · "+x.category.toUpperCase()+" · "+(x.source_rw||"RW belum dicantumkan")));
-          row.append(el("p","sub","Dikirim "+new Date(x.submitted_at).toLocaleString("id-ID")+" · Pengirim "+x.submitted_by));
-          const pre=el("pre","",JSON.stringify({rincian:x.payload,catatan:x.submitter_note},null,2));pre.style.whiteSpace="pre-wrap";pre.style.overflowWrap="anywhere";row.append(pre);
-          const note=el("input");note.placeholder="Catatan verifikator (wajib untuk perbaikan/penolakan)";note.style.width="100%";
-          const actions=el("div","actions");
-          [["verified","Terima / Verifikasi"],["revision","Minta Perbaikan"],["rejected","Tolak"]].forEach(([v,label])=>{
-            const btn=el("button","btn secondary",label);btn.type="button";
-            btn.onclick=async()=>{
-              if(v!=="verified"&&!note.value.trim()){alert("Isi catatan untuk perbaikan atau penolakan.");return;}
-              btn.disabled=true;
-              const user=(await db.auth.getUser()).data.user;
-              const {error}=await db.from("data_submissions").update({status:v,review_note:note.value.trim()||null,reviewed_by:user.id,reviewed_at:new Date().toISOString()}).eq("id",x.id);
-              if(error){alert(error.message);btn.disabled=false;}else load();
+          row.append(el("p","sub","Dikirim "+new Date(x.submitted_at).toLocaleString("id-ID")+" · Status: "+x.status+(x.published_at?" · Sudah diterbitkan ke "+x.published_table:"")));
+          const pre=el("pre","",JSON.stringify({rincian:x.payload,catatan_pengirim:x.submitter_note,catatan_verifikator:x.review_note},null,2));pre.style.whiteSpace="pre-wrap";pre.style.overflowWrap="anywhere";row.append(pre);
+          if(x.status==="submitted"||x.status==="revision"){
+            const note=el("input");note.placeholder="Catatan verifikator (wajib untuk perbaikan/penolakan)";note.style.width="100%";
+            const actions=el("div","actions");
+            [["verified","Tandai Terverifikasi"],["revision","Minta Perbaikan"],["rejected","Tolak"]].forEach(([v,label])=>{
+              const btn=el("button","btn secondary",label);btn.type="button";
+              btn.onclick=async()=>{
+                if(v!=="verified"&&!note.value.trim()){alert("Isi catatan untuk perbaikan atau penolakan.");return;}
+                btn.disabled=true;const user=(await db.auth.getUser()).data.user;
+                const {error}=await db.from("data_submissions").update({status:v,review_note:note.value.trim()||null,reviewed_by:user.id,reviewed_at:new Date().toISOString()}).eq("id",x.id);
+                if(error){alert(error.message);btn.disabled=false;}else load();
+              };actions.append(btn);
+            });
+            row.append(note,actions);
+          } else if(x.status==="verified"&&!x.published_at){
+            const publish=el("button","btn","Terbitkan ke Data Portal");publish.type="button";
+            const note=el("p","sub","Data akan disalin ke tabel "+({umkm:"UMKM",fasilitas:"Fasilitas umum",demografi:"Demografi tahunan",lingkungan:"Lingkungan tahunan"}[x.category]||"terkait")+". Periksa kembali sumber dan isi sebelum menerbitkan.");
+            publish.onclick=async()=>{
+              if(!confirm("Terbitkan usulan ini ke tabel data portal? Tindakan ini hanya dapat dilakukan satu kali."))return;
+              publish.disabled=true;publish.textContent="Menerbitkan…";
+              const {data:result,error}=await db.rpc("publish_verified_submission",{p_submission_id:x.id});
+              if(error){alert("Gagal menerbitkan: "+error.message);publish.disabled=false;publish.textContent="Terbitkan ke Data Portal";}
+              else{alert("Data berhasil diterbitkan ke "+result.table_name+".");load();}
             };
-            actions.append(btn);
-          });
-          row.append(note,actions);list.append(row);
+            row.append(note,publish);
+          }
+          list.append(row);
         });
       }
       load();
