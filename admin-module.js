@@ -229,14 +229,17 @@
       const panel=el("div","card");panel.append(el("h3","","Import Excel dan Pemeriksaan Kualitas Data"));
       panel.append(el("p","sub","Unggah .xlsx, .xls, atau .csv. Baris yang lolos pemeriksaan akan dikirim sebagai usulan data berstatus submitted untuk diverifikasi perangkat LPM. Tidak ada data yang langsung dipublikasikan."));
       const category=select("Kategori data","category",[["umkm","UMKM"],["fasilitas","Fasilitas umum"],["demografi","Demografi"],["lingkungan","Lingkungan"]]);
-      const submitter=field("Nama lengkap pengisi","submitter_name","text",true);
-      const rw=field("RW sumber data","source_rw","text",true);
+      const submitter=field("1. Nama lengkap pengisi","submitter_name","text",true);
+      const submitterInput=submitter.querySelector("input");submitterInput.placeholder="Contoh: Ahmad Fauzi";submitterInput.autocomplete="name";submitterInput.style.minHeight="44px";
+      const rw=field("2. RW sumber data","source_rw","text",true);
+      const rwInput=rw.querySelector("input");rwInput.placeholder="Contoh: RW 03";rwInput.style.minHeight="44px";
       const source=area("Sumber / catatan data","submitter_note");
-      const file=el("input");file.type="file";file.accept=".xlsx,.xls,.csv";
-      const fileLabel=el("label","bg-admin-field","Pilih file Excel / CSV");fileLabel.append(file);
+      const file=el("input");file.type="file";file.accept=".xlsx,.xls,.csv";file.required=true;file.style.minHeight="44px";
+      const fileLabel=el("label","bg-admin-field","3. Pilih file Excel / CSV");fileLabel.append(file);
+      const instruction=el("p","sub","Isi nama petugas dan RW terlebih dahulu. Setelah itu pilih file, lalu tekan Periksa File.");
       const preview=el("div","");const check=el("button","btn secondary","Periksa File");check.type="button";const send=el("button","btn","Kirim Baris Valid ke Verifikasi LPM");send.type="button";send.disabled=true;
       const msg=el("p","sub","Format kolom harus menggunakan nama field yang dijelaskan pada template.");
-      panel.append(category,submitter,rw,source,fileLabel,check,preview,send,msg);work.append(panel);
+      panel.append(category,submitter,rw,source,instruction,fileLabel,check,preview,send,msg);work.append(panel);
       let validRows=[],report=[];
       const requiredBy={
         umkm:["nama_usaha","kategori"],
@@ -248,8 +251,15 @@
       const titleKey={umkm:"nama_usaha",fasilitas:"nama_publik",demografi:"tahun",lingkungan:"tahun"};
       check.onclick=async()=>{
         preview.replaceChildren();send.disabled=true;validRows=[];report=[];
-        if(!file.files[0]){msg.textContent="Pilih file terlebih dahulu.";return;}
-        if(!submitter.querySelector("input").value.trim()||!rw.querySelector("input").value.trim()){msg.textContent="Nama pengisi dan RW sumber data wajib diisi.";return;}
+        const missing=[];
+        if(!submitterInput.value.trim())missing.push("Nama lengkap pengisi");
+        if(!rwInput.value.trim())missing.push("RW sumber data");
+        if(!file.files[0])missing.push("File Excel / CSV");
+        if(missing.length){
+          msg.textContent="Belum lengkap: "+missing.join(", ")+". Isi kolom yang ditandai, kemudian tekan Periksa File.";
+          if(!submitterInput.value.trim())submitterInput.focus();else if(!rwInput.value.trim())rwInput.focus();else file.focus();
+          return;
+        }
         msg.textContent="Membaca file…";
         try{
           if(!window.XLSX){await new Promise((resolve,reject)=>{const s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";s.onload=resolve;s.onerror=reject;document.head.append(s);});}
