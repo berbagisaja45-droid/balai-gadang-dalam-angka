@@ -293,7 +293,7 @@
             else dbDuplicate=existingKeys.has(String(clean.tahun||""));
             const numericNegative=Object.entries(clean).filter(([k,v])=>numeric.has(k)&&v!==""&&Number(v)<0).map(([k])=>k);
             const yearValue=Number(clean.tahun);
-            const implausibleYear=clean.tahun!==""&&(!Number.isInteger(yearValue)||yearValue<1900||yearValue>new Date().getFullYear()+1);
+            const implausibleYear=clean.tahun!=null&&String(clean.tahun).trim()!==""&&(!Number.isInteger(yearValue)||yearValue<1900||yearValue>new Date().getFullYear()+1);
             const consistency=[];
             if(selectedCategory==="demografi"){
               const pop=Number(clean.jumlah_penduduk||0),gender=Number(clean.laki_laki||0)+Number(clean.perempuan||0);
