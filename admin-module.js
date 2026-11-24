@@ -298,7 +298,7 @@
           info.append(el("p","sub","Terdaftar: "+new Date(user.created_at).toLocaleString("id-ID")));
           const name=el("input");name.type="text";name.value=user.full_name||"";name.placeholder="Nama petugas";name.setAttribute("aria-label","Nama petugas");
           const role=el("select");
-          [["admin","Admin"],["verifikator","Verifikator"],["data_entry","Petugas input data"]].forEach(([v,t])=>{const o=el("option");o.value=v;o.textContent=t;role.append(o);});
+          [["admin","Admin"],["verifikator","Admin/verifikator portal"],["lpm_verifier","Perangkat LPM (verifikasi)"],["data_entry","Petugas input data"]].forEach(([v,t])=>{const o=el("option");o.value=v;o.textContent=t;role.append(o);});
           role.value=user.role;
           const save=el("button","btn","Simpan perubahan");save.type="button";
           const result=el("p","sub","");
