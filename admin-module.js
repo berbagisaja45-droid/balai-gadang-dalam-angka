@@ -327,7 +327,6 @@
           validRows=[];preview.replaceChildren();loadImportHistory();
         }catch(err){msg.textContent="Gagal mengirim: "+err.message;send.disabled=false;}
       };
-    }
       const history=el("div","card");history.append(el("h3","","Riwayat Import Data"));work.append(history);
       async function loadImportHistory(){
         history.querySelectorAll(".bg-admin-row").forEach(n=>n.remove());
