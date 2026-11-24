@@ -77,6 +77,23 @@ footer{background:#103e32;color:#d9e9e0;padding:25px 0;font-size:11px}.foot{disp
 <div class="card"><span class="metric-icon">▤</span><div class="metric-label">Rumah kost</div><div class="metric" id="kosts">—</div><div class="metric-note">unit bangunan terdata</div></div>
 <div class="card"><span class="metric-icon">▣</span><div class="metric-label">Kamar kost</div><div class="metric" id="rooms">—</div><div class="metric-note">kamar tersedia</div></div>
 </div>
+<section id="dashboard-statistik" class="card" style="margin:18px 0 26px">
+<div class="section-head" style="margin-top:0"><div><h2>Dashboard Statistik Interaktif</h2><div class="sub">Ringkasan indikator yang telah dipublikasikan dan diverifikasi</div></div><button class="btn secondary" id="refresh-statistik" type="button">Perbarui data</button></div>
+<div class="grid" id="statistik-kpi">
+<div class="card"><div class="metric-label">Penduduk</div><div class="metric" id="dash-population">—</div><div class="metric-note">jiwa</div></div>
+<div class="card"><div class="metric-label">Kepala keluarga</div><div class="metric" id="dash-households">—</div><div class="metric-note">KK</div></div>
+<div class="card"><div class="metric-label">UMKM terverifikasi</div><div class="metric" id="dash-umkm">—</div><div class="metric-note">unit usaha</div></div>
+<div class="card"><div class="metric-label">Fasilitas umum</div><div class="metric" id="dash-facilities">—</div><div class="metric-note">unit</div></div>
+</div>
+<div class="two" style="margin-top:14px">
+<div class="card"><h3>Komposisi Penduduk</h3><div class="sub">Laki-laki dan perempuan · tahun terpilih</div><div id="dash-gender" class="placeholder">Menunggu data terverifikasi.</div></div>
+<div class="card"><h3>Struktur Kelompok Umur</h3><div class="sub">Kelompok usia 0–14, 15–64, dan 65+</div><div id="dash-age" class="placeholder">Menunggu data terverifikasi.</div></div>
+<div class="card"><h3>Ekonomi Lokal</h3><div class="sub">Indikator UMKM yang tersedia</div><div id="dash-economy" class="placeholder">Menunggu data terverifikasi.</div></div>
+<div class="card"><h3>Lingkungan dan Karbon</h3><div class="sub">Indikator lingkungan yang tersedia</div><div id="dash-environment" class="placeholder">Menunggu data terverifikasi.</div></div>
+</div>
+<div class="card" style="margin-top:14px"><h3>Perkembangan Antar-Tahun</h3><div class="sub">Jumlah penduduk dan UMKM berdasarkan data publik</div><div id="dash-trend" class="placeholder">Grafik akan tampil setelah data tersedia.</div></div>
+<p class="sub" id="dash-status">Memuat data publik…</p>
+</section>
 <div class="portal-shortcuts" aria-label="Akses cepat portal">
 <a href="#berita"><span>📰</span><strong>Portal Berita</strong><small>Informasi dan kegiatan terbaru</small></a>
 <a href="#agenda"><span>📅</span><strong>Agenda & Pengumuman</strong><small>Jadwal kegiatan dan informasi resmi</small></a>
@@ -340,6 +357,7 @@ updateActiveNav();
 <script src="berita-module.js"></script>
 <script src="agenda-module.js"></script>
 <script src="umkm-module.js"></script>
+<script src="dashboard-statistik.js"></script>
 <script src="admin-module.js"></script>
  
 <style>
