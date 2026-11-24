@@ -67,7 +67,7 @@
     root.replaceChildren();
     const top=el("div","card");top.append(el("h2","","Panel Pengelola"),el("p","sub",(profile.full_name||"Petugas")+" · "+profile.role));
     const out=el("button","btn secondary","Keluar");out.onclick=async()=>{await db.auth.signOut();location.reload();};top.append(out);root.append(top);
-    const tabs=el("div","actions");const newsTab=el("button","btn","Kelola Berita");const umkmTab=el("button","btn secondary","Kelola UMKM");const agendaTab=el("button","btn secondary","Agenda & Pengumuman");tabs.append(newsTab,umkmTab);if(["admin","verifikator"].includes(profile.role))tabs.append(agendaTab);const auditTab=el("button","btn secondary","Audit Aktivitas");if(profile.role==="admin"||profile.role==="verifikator")tabs.append(auditTab);root.append(tabs);
+    const tabs=el("div","actions");const newsTab=el("button","btn","Kelola Berita");const umkmTab=el("button","btn secondary","Kelola UMKM");const agendaTab=el("button","btn secondary","Agenda & Pengumuman");tabs.append(newsTab,umkmTab);if(["admin","verifikator"].includes(profile.role))tabs.append(agendaTab);const auditTab=el("button","btn secondary","Audit Aktivitas");if(profile.role==="admin"||profile.role==="verifikator")tabs.append(auditTab);const usersTab=el("button","btn secondary","Kelola Pengguna");if(profile.role==="admin")tabs.append(usersTab);root.append(tabs);
     const work=el("div","");root.append(work);
     function showNews(){
       work.replaceChildren();const form=el("form","card");form.append(el("h3","","Tambah Berita Kelurahan"));
@@ -159,6 +159,44 @@
       }
       loadAgenda();loadAnnouncements();
     }
+    function showUsers(){
+      work.replaceChildren();
+      const card=el("div","card");card.append(el("h3","","Manajemen Pengguna dan Peran"));
+      card.append(el("p","sub","Daftar akun yang sudah dibuat di Supabase Auth dan memiliki profil aplikasi. Admin dapat mengubah nama dan peran. Pembuatan akun/login tetap dilakukan melalui Supabase Auth; jangan membagikan password."));
+      const refresh=el("button","btn secondary","Muat Ulang");refresh.onclick=load;card.append(refresh);
+      const status=el("p","sub","Memuat akun…");card.append(status);work.append(card);
+      async function load(){
+        status.textContent="Memuat akun…";
+        card.querySelectorAll(".bg-admin-row").forEach(n=>n.remove());
+        const {data,error}=await db.from("app_profiles").select("id,full_name,role,created_at").order("created_at",{ascending:true});
+        if(error){status.textContent="Gagal memuat pengguna: "+error.message;return;}
+        status.textContent=(data||[]).length+" akun terdaftar.";
+        (data||[]).forEach(user=>{
+          const row=el("div","bg-admin-row");
+          const info=el("div","");
+          info.append(el("strong","",user.full_name||"Tanpa nama"));
+          info.append(el("p","sub","UID: "+user.id));
+          info.append(el("p","sub","Terdaftar: "+new Date(user.created_at).toLocaleString("id-ID")));
+          const name=el("input");name.type="text";name.value=user.full_name||"";name.placeholder="Nama petugas";name.setAttribute("aria-label","Nama petugas");
+          const role=el("select");
+          [["admin","Admin"],["verifikator","Verifikator"],["data_entry","Petugas input data"]].forEach(([v,t])=>{const o=el("option");o.value=v;o.textContent=t;role.append(o);});
+          role.value=user.role;
+          const save=el("button","btn","Simpan perubahan");save.type="button";
+          const result=el("p","sub","");
+          save.onclick=async()=>{
+            if(user.id===(await db.auth.getUser()).data.user.id && role.value!=="admin"){result.textContent="Peran akun yang sedang digunakan tidak dapat diturunkan dari sesi ini.";return;}
+            save.disabled=true;result.textContent="Menyimpan…";
+            const {error}=await db.from("app_profiles").update({full_name:name.value.trim(),role:role.value}).eq("id",user.id);
+            if(error){result.textContent="Gagal: "+error.message;}
+            else{result.textContent="Perubahan tersimpan.";user.full_name=name.value.trim();user.role=role.value;}
+            save.disabled=false;
+          };
+          const controls=el("div","");controls.append(name,role,save,result);
+          row.append(info,controls);card.append(row);
+        });
+      }
+      load();
+    }
     function showAudit(){
       work.replaceChildren();
       const list=el("div","card");list.append(el("h3","","Riwayat Aktivitas Pengelola"));
@@ -193,6 +231,7 @@
     umkmTab.onclick=()=>{activateTab(umkmTab);showUmkm();};
     if(agendaTab)agendaTab.onclick=()=>{activateTab(agendaTab);showAgenda();};
     if(auditTab)auditTab.onclick=()=>{activateTab(auditTab);showAudit();};
+    if(usersTab)usersTab.onclick=()=>{activateTab(usersTab);showUsers();};
     showNews();
   }
   db.auth.getSession().then(async({data})=>{if(!data.session)return;const {data:p}=await db.from("app_profiles").select("full_name,role").eq("id",data.session.user.id).single();if(p&&["admin","data_entry","verifikator"].includes(p.role))renderWorkspace(p);});
