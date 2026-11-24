@@ -67,7 +67,7 @@
     root.replaceChildren();
     const top=el("div","card");top.append(el("h2","","Panel Pengelola"),el("p","sub",(profile.full_name||"Petugas")+" · "+profile.role));
     const out=el("button","btn secondary","Keluar");out.onclick=async()=>{await db.auth.signOut();location.reload();};top.append(out);root.append(top);
-    const tabs=el("div","actions");const newsTab=el("button","btn","Kelola Berita");const umkmTab=el("button","btn secondary","Kelola UMKM");const agendaTab=el("button","btn secondary","Agenda & Pengumuman");tabs.append(newsTab,umkmTab);if(["admin","verifikator"].includes(profile.role))tabs.append(agendaTab);const auditTab=el("button","btn secondary","Audit Aktivitas");if(profile.role==="admin"||profile.role==="verifikator")tabs.append(auditTab);const usersTab=el("button","btn secondary","Kelola Pengguna");if(profile.role==="admin")tabs.append(usersTab);const submissionsTab=el("button","btn secondary","Pendataan RW");if(["admin","data_entry"].includes(profile.role))tabs.append(submissionsTab);const reviewTab=el("button","btn secondary","Verifikasi Data");if(["admin","verifikator"].includes(profile.role))tabs.append(reviewTab);root.append(tabs);
+    const tabs=el("div","actions");const newsTab=el("button","btn","Kelola Berita");const umkmTab=el("button","btn secondary","Kelola UMKM");const agendaTab=el("button","btn secondary","Agenda & Pengumuman");tabs.append(newsTab,umkmTab);if(["admin","verifikator"].includes(profile.role))tabs.append(agendaTab);const auditTab=el("button","btn secondary","Audit Aktivitas");if(profile.role==="admin"||profile.role==="verifikator")tabs.append(auditTab);const usersTab=el("button","btn secondary","Kelola Pengguna");if(profile.role==="admin")tabs.append(usersTab);const submissionsTab=el("button","btn secondary","Pendataan RW");if(["admin","data_entry"].includes(profile.role))tabs.append(submissionsTab);const reviewTab=el("button","btn secondary","Verifikasi Data");if(["admin","verifikator","lpm_verifier"].includes(profile.role))tabs.append(reviewTab);root.append(tabs);
     const work=el("div","");root.append(work);
     function showNews(){
       work.replaceChildren();const form=el("form","card");form.append(el("h3","","Tambah Berita Kelurahan"));
@@ -161,11 +161,12 @@
     }
     function showSubmissions(){
       work.replaceChildren();
-      const form=el("form","card");form.append(el("h3","","Formulir Usulan Data RW"));
-      form.append(el("p","sub","Data yang dikirim akan masuk antrean verifikasi. Data tidak langsung tampil di portal publik."));
+      const form=el("form","card");form.append(el("h3","","Formulir Pendataan RW"));
+      form.append(el("p","sub","Simpan sebagai Draft kapan saja. Draft tersimpan di akun dan dapat dilanjutkan kembali dari perangkat mana pun setelah login."));
+      form.append(field("Nama lengkap pengisi","submitter_name","text",true));
       form.append(select("Jenis data","category",[["umkm","UMKM"],["fasilitas","Fasilitas umum"],["demografi","Demografi"],["lingkungan","Lingkungan"]]));
-      form.append(field("Judul / nama data","title","text",true),field("RW sumber data","source_rw"),area("Catatan petugas","submitter_note"));
-      const payloadWrap=el("div","card");payloadWrap.style.margin="12px 0";payloadWrap.append(el("h4","","Rincian data"));
+      form.append(field("Judul / nama data","title","text",true),field("RW sumber data","source_rw"),area("Catatan / sumber data","submitter_note"));
+      const payloadWrap=el("div","card");payloadWrap.style.margin="12px 0";
       const category=form.querySelector('select[name="category"]');
       function renderFields(){
         payloadWrap.replaceChildren(el("h4","","Rincian data"));
@@ -178,67 +179,99 @@
         (specs[category.value]||[]).forEach(([n,l,t])=>payloadWrap.append(field(l,n,t)));
       }
       category.addEventListener("change",renderFields);renderFields();form.append(payloadWrap);
-      const send=el("button","btn","Kirim untuk Verifikasi");send.type="submit";const msg=el("p","sub","");form.append(send,msg);work.append(form);
-      form.addEventListener("submit",async e=>{
-        e.preventDefault();send.disabled=true;
+      const actions=el("div","actions");
+      const save=el("button","btn secondary","Simpan Draft");save.type="button";
+      const send=el("button","btn","Kirim ke Verifikasi LPM");send.type="submit";
+      const msg=el("p","sub","");actions.append(save,send);form.append(actions,msg);work.append(form);
+      let editingId=null;
+      function collect(){
+        const payload={};payloadWrap.querySelectorAll("input").forEach(i=>{if(i.value.trim()!=="")payload[i.name]=i.type==="number"?Number(i.value):i.value.trim();});
+        return {category:category.value,title:form.elements.title.value.trim(),source_rw:form.elements.source_rw.value.trim()||null,submitter_name:form.elements.submitter_name.value.trim(),submitter_note:form.elements.submitter_note.value.trim()||null,payload};
+      }
+      async function saveRecord(status){
+        const d=collect();if(!d.submitter_name||!d.title){msg.textContent="Isi nama pengisi dan judul/nama data terlebih dahulu.";return;}
+        save.disabled=true;send.disabled=true;
         try{
-          const user=(await db.auth.getUser()).data.user;const payload={};
-          payloadWrap.querySelectorAll("input").forEach(i=>{if(i.value.trim()!=="")payload[i.name]=i.type==="number"?Number(i.value):i.value.trim();});
-          const data={category:category.value,title:form.elements.title.value.trim(),source_rw:form.elements.source_rw.value.trim()||null,submitter_note:form.elements.submitter_note.value.trim()||null,payload,submitted_by:user.id,status:"submitted"};
-          const {error}=await db.from("data_submissions").insert(data);if(error)throw error;
-          msg.textContent="Usulan data berhasil dikirim dan menunggu verifikasi.";form.reset();renderFields();
-        }catch(err){msg.textContent="Gagal mengirim: "+err.message;}
-        finally{send.disabled=false;}
-      });
-      const history=el("div","card");history.append(el("h3","","Riwayat Usulan Saya"));work.append(history);
+          const user=(await db.auth.getUser()).data.user;
+          if(editingId){
+            const {error}=await db.from("data_submissions").update({...d,status}).eq("id",editingId);if(error)throw error;
+          }else{
+            const {data,error}=await db.from("data_submissions").insert({...d,status,submitted_by:user.id}).select("id").single();if(error)throw error;editingId=data.id;
+          }
+          msg.textContent=status==="draft"?"Draft tersimpan. Anda dapat melanjutkan nanti dari bagian Draft Saya.":"Data terkirim ke antrean verifikasi perangkat LPM.";
+          if(status==="submitted"){editingId=null;form.reset();renderFields();}
+          loadMine();
+        }catch(err){msg.textContent="Gagal menyimpan: "+err.message;}
+        finally{save.disabled=false;send.disabled=false;}
+      }
+      save.onclick=()=>saveRecord("draft");
+      form.addEventListener("submit",e=>{e.preventDefault();saveRecord("submitted");});
+      const history=el("div","card");history.append(el("h3","","Draft dan Riwayat Data Saya"));work.append(history);
       async function loadMine(){
         history.querySelectorAll(".bg-admin-row").forEach(n=>n.remove());
-        const {data,error}=await db.from("data_submissions").select("id,category,title,source_rw,status,submitted_at,review_note").order("submitted_at",{ascending:false}).limit(100);
+        const {data,error}=await db.from("data_submissions").select("id,category,title,source_rw,status,submitted_at,review_note,submitter_name,payload").order("submitted_at",{ascending:false}).limit(100);
         if(error){history.append(el("p","sub",error.message));return;}
-        (data||[]).forEach(x=>{const row=el("div","bg-admin-row");row.append(el("span","",x.title+" · "+x.category+" · "+x.status+" · "+new Date(x.submitted_at).toLocaleString("id-ID")+(x.review_note?" · Catatan: "+x.review_note:"")));history.append(row);});
+        (data||[]).forEach(x=>{
+          const row=el("div","bg-admin-row");row.append(el("span","",x.title+" · "+x.category+" · "+x.status+" · "+(x.submitter_name||"")));
+          if(x.status==="draft"||x.status==="revision"){
+            const edit=el("button","btn secondary","Lanjutkan");edit.type="button";
+            edit.onclick=()=>{editingId=x.id;form.elements.submitter_name.value=x.submitter_name||"";category.value=x.category;renderFields();form.elements.title.value=x.title;form.elements.source_rw.value=x.source_rw||"";form.elements.submitter_note.value=x.submitter_note||"";Object.entries(x.payload||{}).forEach(([k,v])=>{const input=payloadWrap.querySelector('[name="'+k+'"]');if(input)input.value=v;});msg.textContent="Draft dimuat. Lanjutkan pengisian, lalu Simpan Draft atau Kirim ke Verifikasi LPM.";window.scrollTo({top:0,behavior:"smooth"});};
+            row.append(edit);
+          }
+          if(x.review_note)row.append(el("p","sub","Catatan pemeriksa: "+x.review_note));
+          history.append(row);
+        });
       }
       loadMine();
     }
     function showReview(){
       work.replaceChildren();const list=el("div","card");
-      list.append(el("h3","","Antrean Verifikasi dan Publikasi Data RW"));
-      list.append(el("p","sub","Verifikasi memeriksa kelayakan usulan. Setelah status verified, admin/verifikator dapat menerbitkan satu kali ke tabel data terkait agar dapat dipakai dashboard."));
+      const isLpm=profile.role==="lpm_verifier";
+      list.append(el("h3","","Verifikasi Data oleh Perangkat LPM"));
+      list.append(el("p","sub",isLpm?"Perangkat LPM memeriksa data, mengisi identitas pemeriksa, lalu memberi keputusan verifikasi.":"Admin dapat memeriksa hasil verifikasi LPM dan memberi persetujuan akhir sebelum publikasi."));
       const refresh=el("button","btn secondary","Muat Ulang");refresh.onclick=load;list.append(refresh);
-      const status=el("p","sub","Memuat antrean…");list.append(status);work.append(list);
+      const status=el("p","sub","Memuat usulan…");list.append(status);work.append(list);
       async function load(){
-        list.querySelectorAll(".bg-admin-row").forEach(n=>n.remove());status.textContent="Memuat usulan…";
-        const {data,error}=await db.from("data_submissions").select("id,category,title,source_rw,payload,submitter_note,status,submitted_at,submitted_by,review_note,published_at,published_table").order("submitted_at",{ascending:false}).limit(200);
-        if(error){status.textContent="Gagal memuat antrean: "+error.message;return;}
+        list.querySelectorAll(".bg-admin-row").forEach(n=>n.remove());
+        const {data,error}=await db.from("data_submissions").select("id,category,title,source_rw,payload,submitter_note,submitter_name,status,submitted_at,review_note,lpm_verifier_name,lpm_verifier_position,lpm_verification_note,lpm_verified_at,published_at,published_table").order("submitted_at",{ascending:false}).limit(200);
+        if(error){status.textContent="Gagal memuat: "+error.message;return;}
         status.textContent=(data||[]).length+" usulan ditemukan.";
         (data||[]).forEach(x=>{
-          const row=el("div","bg-admin-row");row.style.alignItems="stretch";row.style.flexDirection="column";
+          const row=el("div","bg-admin-row");row.style.flexDirection="column";row.style.alignItems="stretch";
           row.append(el("strong","",x.title+" · "+x.category.toUpperCase()+" · "+(x.source_rw||"RW belum dicantumkan")));
-          row.append(el("p","sub","Dikirim "+new Date(x.submitted_at).toLocaleString("id-ID")+" · Status: "+x.status+(x.published_at?" · Sudah diterbitkan ke "+x.published_table:"")));
-          const pre=el("pre","",JSON.stringify({rincian:x.payload,catatan_pengirim:x.submitter_note,catatan_verifikator:x.review_note},null,2));pre.style.whiteSpace="pre-wrap";pre.style.overflowWrap="anywhere";row.append(pre);
-          if(x.status==="submitted"||x.status==="revision"){
-            const note=el("input");note.placeholder="Catatan verifikator (wajib untuk perbaikan/penolakan)";note.style.width="100%";
-            const actions=el("div","actions");
-            [["verified","Tandai Terverifikasi"],["revision","Minta Perbaikan"],["rejected","Tolak"]].forEach(([v,label])=>{
-              const btn=el("button","btn secondary",label);btn.type="button";
-              btn.onclick=async()=>{
-                if(v!=="verified"&&!note.value.trim()){alert("Isi catatan untuk perbaikan atau penolakan.");return;}
-                btn.disabled=true;const user=(await db.auth.getUser()).data.user;
-                const {error}=await db.from("data_submissions").update({status:v,review_note:note.value.trim()||null,reviewed_by:user.id,reviewed_at:new Date().toISOString()}).eq("id",x.id);
-                if(error){alert(error.message);btn.disabled=false;}else load();
-              };actions.append(btn);
-            });
-            row.append(note,actions);
-          } else if(x.status==="verified"&&!x.published_at){
-            const publish=el("button","btn","Terbitkan ke Data Portal");publish.type="button";
-            const note=el("p","sub","Data akan disalin ke tabel "+({umkm:"UMKM",fasilitas:"Fasilitas umum",demografi:"Demografi tahunan",lingkungan:"Lingkungan tahunan"}[x.category]||"terkait")+". Periksa kembali sumber dan isi sebelum menerbitkan.");
-            publish.onclick=async()=>{
-              if(!confirm("Terbitkan usulan ini ke tabel data portal? Tindakan ini hanya dapat dilakukan satu kali."))return;
-              publish.disabled=true;publish.textContent="Menerbitkan…";
-              const {data:result,error}=await db.rpc("publish_verified_submission",{p_submission_id:x.id});
-              if(error){alert("Gagal menerbitkan: "+error.message);publish.disabled=false;publish.textContent="Terbitkan ke Data Portal";}
-              else{alert("Data berhasil diterbitkan ke "+result.table_name+".");load();}
+          row.append(el("p","sub","Pengisi: "+(x.submitter_name||"Tidak dicantumkan")+" · Status: "+x.status+" · "+new Date(x.submitted_at).toLocaleString("id-ID")));
+          const pre=el("pre","",JSON.stringify({rincian:x.payload,catatan_pengisi:x.submitter_note},null,2));pre.style.whiteSpace="pre-wrap";row.append(pre);
+          if(isLpm&&x.status==="submitted"){
+            const name=field("Nama perangkat LPM pemeriksa","lpm_name","text",true);
+            const position=field("Jabatan / unsur LPM","lpm_position","text",true);
+            const note=area("Catatan verifikasi LPM","lpm_note");
+            const verify=el("button","btn","Verifikasi sebagai Perangkat LPM");verify.type="button";
+            verify.onclick=async()=>{
+              const n=name.querySelector("input").value.trim(),p=position.querySelector("input").value.trim(),v=note.querySelector("textarea").value.trim();
+              if(!n||!p){alert("Nama dan jabatan perangkat LPM wajib diisi.");return;}
+              verify.disabled=true;
+              const {error}=await db.rpc("lpm_verify_submission",{p_submission_id:x.id,p_verifier_name:n,p_verifier_position:p,p_note:v||null});
+              if(error){alert(error.message);verify.disabled=false;}else load();
             };
-            row.append(note,publish);
+            row.append(name,position,note,verify);
+          } else if(!isLpm&&x.status==="lpm_verified"&&!x.published_at){
+            row.append(el("p","sub","Diverifikasi oleh "+x.lpm_verifier_name+" · "+x.lpm_verifier_position+" · "+new Date(x.lpm_verified_at).toLocaleString("id-ID")+(x.lpm_verification_note?" · Catatan: "+x.lpm_verification_note:"")));
+            const approve=el("button","btn secondary","Setujui untuk Publikasi");approve.type="button";
+            approve.onclick=async()=>{
+              if(!confirm("Setujui data yang telah diverifikasi perangkat LPM ini?"))return;
+              approve.disabled=true;
+              const {error}=await db.from("data_submissions").update({status:"verified",reviewed_by:(await db.auth.getUser()).data.user.id,reviewed_at:new Date().toISOString(),review_note:"Disetujui setelah verifikasi perangkat LPM."}).eq("id",x.id);
+              if(error){alert(error.message);approve.disabled=false;}else load();
+            };
+            row.append(approve);
+          } else if(!isLpm&&x.status==="verified"&&!x.published_at){
+            const publish=el("button","btn","Terbitkan ke Data Portal");publish.type="button";
+            publish.onclick=async()=>{
+              if(!confirm("Terbitkan data yang sudah diverifikasi LPM ke portal publik?"))return;
+              publish.disabled=true;
+              const {data:result,error}=await db.rpc("publish_verified_submission",{p_submission_id:x.id});
+              if(error){alert(error.message);publish.disabled=false;}else{alert("Data diterbitkan ke "+result.table_name+".");load();}
+            };row.append(publish);
           }
           list.append(row);
         });
