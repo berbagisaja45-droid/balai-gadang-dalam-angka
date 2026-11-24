@@ -59,7 +59,7 @@
     try{
       const fd=new FormData(login);const {data,error}=await db.auth.signInWithPassword({email:fd.get("email"),password:fd.get("password")});if(error)throw error;
       const {data:profile,error:pe}=await db.from("app_profiles").select("full_name,role").eq("id",data.user.id).single();if(pe)throw pe;
-      if(!["admin","data_entry","verifikator"].includes(profile.role)){await db.auth.signOut();throw new Error("Akun tidak memiliki peran pengelola portal.");}
+      if(!["admin","data_entry","verifikator","lpm_verifier"].includes(profile.role)){await db.auth.signOut();throw new Error("Akun tidak memiliki peran pengelola portal.");}
       renderWorkspace(profile);
     }catch(err){message.textContent=err.message||"Login gagal.";submit.disabled=false;}
   });
@@ -67,7 +67,7 @@
     root.replaceChildren();
     const top=el("div","card");top.append(el("h2","","Panel Pengelola"),el("p","sub",(profile.full_name||"Petugas")+" · "+profile.role));
     const out=el("button","btn secondary","Keluar");out.onclick=async()=>{await db.auth.signOut();location.reload();};top.append(out);root.append(top);
-    const tabs=el("div","actions");const newsTab=el("button","btn","Kelola Berita");const umkmTab=el("button","btn secondary","Kelola UMKM");const agendaTab=el("button","btn secondary","Agenda & Pengumuman");tabs.append(newsTab,umkmTab);if(["admin","verifikator"].includes(profile.role))tabs.append(agendaTab);const auditTab=el("button","btn secondary","Audit Aktivitas");if(profile.role==="admin"||profile.role==="verifikator")tabs.append(auditTab);const usersTab=el("button","btn secondary","Kelola Pengguna");if(profile.role==="admin")tabs.append(usersTab);const submissionsTab=el("button","btn secondary","Pendataan RW");if(["admin","data_entry"].includes(profile.role))tabs.append(submissionsTab);const reviewTab=el("button","btn secondary","Verifikasi Data");if(["admin","verifikator","lpm_verifier"].includes(profile.role))tabs.append(reviewTab);root.append(tabs);
+    const tabs=el("div","actions");const newsTab=el("button","btn","Kelola Berita");const umkmTab=el("button","btn secondary","Kelola UMKM");const agendaTab=el("button","btn secondary","Agenda & Pengumuman");tabs.append(newsTab,umkmTab);if(["admin","verifikator"].includes(profile.role))tabs.append(agendaTab);const auditTab=el("button","btn secondary","Audit Aktivitas");if(profile.role==="admin"||profile.role==="verifikator")tabs.append(auditTab);const usersTab=el("button","btn secondary","Kelola Pengguna");if(profile.role==="admin")tabs.append(usersTab);const submissionsTab=el("button","btn secondary","Pendataan RW");if(["admin","data_entry"].includes(profile.role))tabs.append(submissionsTab);const importTab=el("button","btn secondary","Import & Validasi Excel");if(["admin","data_entry"].includes(profile.role))tabs.append(importTab);const reviewTab=el("button","btn secondary","Verifikasi Data");if(["admin","verifikator","lpm_verifier"].includes(profile.role))tabs.append(reviewTab);root.append(tabs);
     const work=el("div","");root.append(work);
     function showNews(){
       work.replaceChildren();const form=el("form","card");form.append(el("h3","","Tambah Berita Kelurahan"));
@@ -224,6 +224,70 @@
       }
       loadMine();
     }
+    function showImport(){
+      work.replaceChildren();
+      const panel=el("div","card");panel.append(el("h3","","Import Excel dan Pemeriksaan Kualitas Data"));
+      panel.append(el("p","sub","Unggah .xlsx, .xls, atau .csv. Baris yang lolos pemeriksaan akan dikirim sebagai usulan data berstatus submitted untuk diverifikasi perangkat LPM. Tidak ada data yang langsung dipublikasikan."));
+      const category=select("Kategori data","category",[["umkm","UMKM"],["fasilitas","Fasilitas umum"],["demografi","Demografi"],["lingkungan","Lingkungan"]]);
+      const submitter=field("Nama lengkap pengisi","submitter_name","text",true);
+      const rw=field("RW sumber data","source_rw","text",true);
+      const source=area("Sumber / catatan data","submitter_note");
+      const file=el("input");file.type="file";file.accept=".xlsx,.xls,.csv";
+      const fileLabel=el("label","bg-admin-field","Pilih file Excel / CSV");fileLabel.append(file);
+      const preview=el("div","");const check=el("button","btn secondary","Periksa File");check.type="button";const send=el("button","btn","Kirim Baris Valid ke Verifikasi LPM");send.type="button";send.disabled=true;
+      const msg=el("p","sub","Format kolom harus menggunakan nama field yang dijelaskan pada template.");
+      panel.append(category,submitter,rw,source,fileLabel,check,preview,send,msg);work.append(panel);
+      let validRows=[],report=[];
+      const requiredBy={
+        umkm:["nama_usaha","kategori"],
+        fasilitas:["nama_publik","kategori","tahun"],
+        demografi:["tahun","jumlah_penduduk"],
+        lingkungan:["tahun"]
+      };
+      const numeric=new Set(["tahun","jumlah_penduduk","jumlah_kk","laki_laki","perempuan","tutupan_pohon_ha","agroforestri_ha","stok_karbon_tco2e","jumlah_petak"]);
+      const titleKey={umkm:"nama_usaha",fasilitas:"nama_publik",demografi:"tahun",lingkungan:"tahun"};
+      check.onclick=async()=>{
+        preview.replaceChildren();send.disabled=true;validRows=[];report=[];
+        if(!file.files[0]){msg.textContent="Pilih file terlebih dahulu.";return;}
+        if(!submitter.querySelector("input").value.trim()||!rw.querySelector("input").value.trim()){msg.textContent="Nama pengisi dan RW sumber data wajib diisi.";return;}
+        msg.textContent="Membaca file…";
+        try{
+          if(!window.XLSX){await new Promise((resolve,reject)=>{const s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";s.onload=resolve;s.onerror=reject;document.head.append(s);});}
+          const bytes=await file.files[0].arrayBuffer();const wb=XLSX.read(bytes,{type:"array"});const raw=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:"",raw:false});
+          if(!raw.length)throw new Error("Sheet pertama kosong.");
+          const seen=new Set();
+          raw.forEach((r,i)=>{
+            const clean={};Object.entries(r).forEach(([k,v])=>clean[String(k).trim().toLowerCase()]=typeof v==="string"?v.trim():v);
+            const missing=requiredBy[category.querySelector("select").value].filter(k=>clean[k]===""||clean[k]==null);
+            const bad=Object.entries(clean).filter(([k,v])=>numeric.has(k)&&v!==""&&!Number.isFinite(Number(String(v).replace(",",".")))).map(([k])=>k);
+            const title=String(clean[titleKey[category.querySelector("select").value]]||"Baris "+(i+2));
+            const key=category.querySelector("select").value+"|"+rw.querySelector("input").value.trim().toLowerCase()+"|"+title.toLowerCase();
+            const duplicate=seen.has(key);seen.add(key);
+            const errors=[...(missing.length?["Kolom wajib kosong: "+missing.join(", ")]:[]),...(bad.length?["Angka tidak valid: "+bad.join(", ")]:[]),...(duplicate?["Duplikat dalam file"]:[])];
+            const payload={};Object.entries(clean).forEach(([k,v])=>{if(v!=="")payload[k]=numeric.has(k)?Number(String(v).replace(",",".")):String(v);});
+            report.push({row:i+2,title,errors});if(!errors.length)validRows.push({title,category:category.querySelector("select").value,source_rw:rw.querySelector("input").value.trim(),submitter_name:submitter.querySelector("input").value.trim(),submitter_note:source.querySelector("textarea").value.trim()||null,payload,status:"submitted"});
+          });
+          const ok=report.filter(x=>!x.errors.length).length,bad=report.length-ok;
+          const summary=el("div","note",report.length+" baris dibaca · "+ok+" lolos · "+bad+" perlu diperbaiki.");
+          preview.append(summary);
+          const table=el("div","tablewrap");const t=el("table");const head=el("thead");const hr=el("tr");["Baris","Identitas","Hasil pemeriksaan"].forEach(x=>hr.append(el("th","",x)));head.append(hr);t.append(head);const body=el("tbody");
+          report.slice(0,100).forEach(x=>{const tr=el("tr");tr.append(el("td","",x.row),el("td","",x.title),el("td","",x.errors.length?x.errors.join("; "):"Lolos"));body.append(tr);});t.append(body);table.append(t);preview.append(table);
+          send.disabled=!validRows.length;msg.textContent="Periksa dan perbaiki baris bermasalah pada file sumber. Hanya baris yang lolos yang dapat dikirim.";
+        }catch(err){msg.textContent="Gagal membaca file: "+err.message;}
+      };
+      send.onclick=async()=>{
+        if(!validRows.length)return;
+        if(!confirm("Kirim "+validRows.length+" baris valid sebagai usulan ke verifikasi LPM?"))return;
+        send.disabled=true;msg.textContent="Mengirim usulan…";
+        try{
+          const user=(await db.auth.getUser()).data.user;
+          const rows=validRows.map(x=>({...x,submitted_by:user.id}));
+          const {error}=await db.from("data_submissions").insert(rows);if(error)throw error;
+          msg.textContent=rows.length+" baris berhasil dikirim ke antrean verifikasi LPM. Data belum dipublikasikan.";
+          validRows=[];preview.replaceChildren();
+        }catch(err){msg.textContent="Gagal mengirim: "+err.message;send.disabled=false;}
+      };
+    }
     function showReview(){
       work.replaceChildren();const list=el("div","card");
       const isLpm=profile.role==="lpm_verifier";
@@ -351,9 +415,9 @@
     if(agendaTab)agendaTab.onclick=()=>{activateTab(agendaTab);showAgenda();};
     if(auditTab)auditTab.onclick=()=>{activateTab(auditTab);showAudit();};
     if(usersTab)usersTab.onclick=()=>{activateTab(usersTab);showUsers();};
-    if(submissionsTab)submissionsTab.onclick=()=>{activateTab(submissionsTab);showSubmissions();};
+    if(submissionsTab)submissionsTab.onclick=()=>{activateTab(submissionsTab);showSubmissions();};if(importTab)importTab.onclick=()=>{activateTab(importTab);showImport();};
     if(reviewTab)reviewTab.onclick=()=>{activateTab(reviewTab);showReview();};
     showNews();
   }
-  db.auth.getSession().then(async({data})=>{if(!data.session)return;const {data:p}=await db.from("app_profiles").select("full_name,role").eq("id",data.session.user.id).single();if(p&&["admin","data_entry","verifikator"].includes(p.role))renderWorkspace(p);});
+  db.auth.getSession().then(async({data})=>{if(!data.session)return;const {data:p}=await db.from("app_profiles").select("full_name,role").eq("id",data.session.user.id).single();if(p&&["admin","data_entry","verifikator","lpm_verifier"].includes(p.role))renderWorkspace(p);});
 })();
