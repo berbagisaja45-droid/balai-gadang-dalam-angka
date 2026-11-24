@@ -67,7 +67,7 @@
     root.replaceChildren();
     const top=el("div","card");top.append(el("h2","","Panel Pengelola"),el("p","sub",(profile.full_name||"Petugas")+" · "+profile.role));
     const out=el("button","btn secondary","Keluar");out.onclick=async()=>{await db.auth.signOut();location.reload();};top.append(out);root.append(top);
-    const tabs=el("div","actions");const newsTab=el("button","btn","Kelola Berita");const umkmTab=el("button","btn secondary","Kelola UMKM");const agendaTab=el("button","btn secondary","Agenda & Pengumuman");tabs.append(newsTab,umkmTab);if(["admin","verifikator"].includes(profile.role))tabs.append(agendaTab);const auditTab=el("button","btn secondary","Audit Aktivitas");if(profile.role==="admin"||profile.role==="verifikator")tabs.append(auditTab);const usersTab=el("button","btn secondary","Kelola Pengguna");if(profile.role==="admin")tabs.append(usersTab);root.append(tabs);
+    const tabs=el("div","actions");const newsTab=el("button","btn","Kelola Berita");const umkmTab=el("button","btn secondary","Kelola UMKM");const agendaTab=el("button","btn secondary","Agenda & Pengumuman");tabs.append(newsTab,umkmTab);if(["admin","verifikator"].includes(profile.role))tabs.append(agendaTab);const auditTab=el("button","btn secondary","Audit Aktivitas");if(profile.role==="admin"||profile.role==="verifikator")tabs.append(auditTab);const usersTab=el("button","btn secondary","Kelola Pengguna");if(profile.role==="admin")tabs.append(usersTab);const submissionsTab=el("button","btn secondary","Pendataan RW");if(["admin","data_entry"].includes(profile.role))tabs.append(submissionsTab);const reviewTab=el("button","btn secondary","Verifikasi Data");if(["admin","verifikator"].includes(profile.role))tabs.append(reviewTab);root.append(tabs);
     const work=el("div","");root.append(work);
     function showNews(){
       work.replaceChildren();const form=el("form","card");form.append(el("h3","","Tambah Berita Kelurahan"));
@@ -159,6 +159,77 @@
       }
       loadAgenda();loadAnnouncements();
     }
+    function showSubmissions(){
+      work.replaceChildren();
+      const form=el("form","card");form.append(el("h3","","Formulir Usulan Data RW"));
+      form.append(el("p","sub","Data yang dikirim akan masuk antrean verifikasi. Data tidak langsung tampil di portal publik."));
+      form.append(select("Jenis data","category",[["umkm","UMKM"],["fasilitas","Fasilitas umum"],["demografi","Demografi"],["lingkungan","Lingkungan"]]));
+      form.append(field("Judul / nama data","title","text",true),field("RW sumber data","source_rw"),area("Catatan petugas","submitter_note"));
+      const payloadWrap=el("div","card");payloadWrap.style.margin="12px 0";payloadWrap.append(el("h4","","Rincian data"));
+      const category=form.querySelector('select[name="category"]');
+      function renderFields(){
+        payloadWrap.replaceChildren(el("h4","","Rincian data"));
+        const specs={
+          umkm:[["nama_usaha","Nama usaha","text"],["kategori","Kategori usaha","text"],["pemilik","Nama pemilik","text"],["produk_unggulan","Produk unggulan","text"],["alamat","Alamat","text"],["telepon","Telepon","text"],["whatsapp","WhatsApp","text"]],
+          fasilitas:[["nama_publik","Nama fasilitas","text"],["kategori","Kategori fasilitas","text"],["kelompok_lokasi","Lokasi / RW","text"],["tahun","Tahun pendataan","number"]],
+          demografi:[["tahun","Tahun data","number"],["jumlah_penduduk","Jumlah penduduk","number"],["jumlah_kk","Jumlah KK","number"],["laki_laki","Laki-laki","number"],["perempuan","Perempuan","number"],["sumber","Sumber data","text"]],
+          lingkungan:[["tahun","Tahun data","number"],["tutupan_pohon_ha","Tutupan pohon (ha)","number"],["agroforestri_ha","Agroforestri (ha)","number"],["stok_karbon_tco2e","Stok karbon (tCO2e)","number"],["jumlah_petak","Jumlah petak","number"],["sumber","Sumber data","text"]]
+        };
+        (specs[category.value]||[]).forEach(([n,l,t])=>payloadWrap.append(field(l,n,t)));
+      }
+      category.addEventListener("change",renderFields);renderFields();form.append(payloadWrap);
+      const send=el("button","btn","Kirim untuk Verifikasi");send.type="submit";const msg=el("p","sub","");form.append(send,msg);work.append(form);
+      form.addEventListener("submit",async e=>{
+        e.preventDefault();send.disabled=true;
+        try{
+          const user=(await db.auth.getUser()).data.user;const payload={};
+          payloadWrap.querySelectorAll("input").forEach(i=>{if(i.value.trim()!=="")payload[i.name]=i.type==="number"?Number(i.value):i.value.trim();});
+          const data={category:category.value,title:form.elements.title.value.trim(),source_rw:form.elements.source_rw.value.trim()||null,submitter_note:form.elements.submitter_note.value.trim()||null,payload,submitted_by:user.id,status:"submitted"};
+          const {error}=await db.from("data_submissions").insert(data);if(error)throw error;
+          msg.textContent="Usulan data berhasil dikirim dan menunggu verifikasi.";form.reset();renderFields();
+        }catch(err){msg.textContent="Gagal mengirim: "+err.message;}
+        finally{send.disabled=false;}
+      });
+      const history=el("div","card");history.append(el("h3","","Riwayat Usulan Saya"));work.append(history);
+      async function loadMine(){
+        history.querySelectorAll(".bg-admin-row").forEach(n=>n.remove());
+        const {data,error}=await db.from("data_submissions").select("id,category,title,source_rw,status,submitted_at,review_note").order("submitted_at",{ascending:false}).limit(100);
+        if(error){history.append(el("p","sub",error.message));return;}
+        (data||[]).forEach(x=>{const row=el("div","bg-admin-row");row.append(el("span","",x.title+" · "+x.category+" · "+x.status+" · "+new Date(x.submitted_at).toLocaleString("id-ID")+(x.review_note?" · Catatan: "+x.review_note:"")));history.append(row);});
+      }
+      loadMine();
+    }
+    function showReview(){
+      work.replaceChildren();const list=el("div","card");list.append(el("h3","","Antrean Verifikasi Data RW"));list.append(el("p","sub","Periksa rincian sebelum menerima atau meminta perbaikan. Persetujuan di sini mencatat status verifikasi; belum otomatis memasukkan data ke tabel statistik publik."));
+      const refresh=el("button","btn secondary","Muat Ulang");refresh.onclick=load;list.append(refresh);const status=el("p","sub","Memuat antrean…");list.append(status);work.append(list);
+      async function load(){
+        list.querySelectorAll(".bg-admin-row").forEach(n=>n.remove());status.textContent="Memuat antrean…";
+        const {data,error}=await db.from("data_submissions").select("id,category,title,source_rw,payload,submitter_note,status,submitted_at,submitted_by").order("submitted_at",{ascending:false}).limit(150);
+        if(error){status.textContent="Gagal memuat antrean: "+error.message;return;}
+        const pending=(data||[]).filter(x=>x.status==="submitted"||x.status==="revision");status.textContent=pending.length+" usulan menunggu tindak lanjut.";
+        pending.forEach(x=>{
+          const row=el("div","bg-admin-row");row.style.alignItems="stretch";row.style.flexDirection="column";
+          row.append(el("strong","",x.title+" · "+x.category.toUpperCase()+" · "+(x.source_rw||"RW belum dicantumkan")));
+          row.append(el("p","sub","Dikirim "+new Date(x.submitted_at).toLocaleString("id-ID")+" · Pengirim "+x.submitted_by));
+          const pre=el("pre","",JSON.stringify({rincian:x.payload,catatan:x.submitter_note},null,2));pre.style.whiteSpace="pre-wrap";pre.style.overflowWrap="anywhere";row.append(pre);
+          const note=el("input");note.placeholder="Catatan verifikator (wajib untuk perbaikan/penolakan)";note.style.width="100%";
+          const actions=el("div","actions");
+          [["verified","Terima / Verifikasi"],["revision","Minta Perbaikan"],["rejected","Tolak"]].forEach(([v,label])=>{
+            const btn=el("button","btn secondary",label);btn.type="button";
+            btn.onclick=async()=>{
+              if(v!=="verified"&&!note.value.trim()){alert("Isi catatan untuk perbaikan atau penolakan.");return;}
+              btn.disabled=true;
+              const user=(await db.auth.getUser()).data.user;
+              const {error}=await db.from("data_submissions").update({status:v,review_note:note.value.trim()||null,reviewed_by:user.id,reviewed_at:new Date().toISOString()}).eq("id",x.id);
+              if(error){alert(error.message);btn.disabled=false;}else load();
+            };
+            actions.append(btn);
+          });
+          row.append(note,actions);list.append(row);
+        });
+      }
+      load();
+    }
     function showUsers(){
       work.replaceChildren();
       const card=el("div","card");card.append(el("h3","","Manajemen Pengguna dan Peran"));
@@ -232,6 +303,8 @@
     if(agendaTab)agendaTab.onclick=()=>{activateTab(agendaTab);showAgenda();};
     if(auditTab)auditTab.onclick=()=>{activateTab(auditTab);showAudit();};
     if(usersTab)usersTab.onclick=()=>{activateTab(usersTab);showUsers();};
+    if(submissionsTab)submissionsTab.onclick=()=>{activateTab(submissionsTab);showSubmissions();};
+    if(reviewTab)reviewTab.onclick=()=>{activateTab(reviewTab);showReview();};
     showNews();
   }
   db.auth.getSession().then(async({data})=>{if(!data.session)return;const {data:p}=await db.from("app_profiles").select("full_name,role").eq("id",data.session.user.id).single();if(p&&["admin","data_entry","verifikator"].includes(p.role))renderWorkspace(p);});
