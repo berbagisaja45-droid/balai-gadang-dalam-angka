@@ -67,7 +67,7 @@
     root.replaceChildren();
     const top=el("div","card");top.append(el("h2","","Panel Pengelola"),el("p","sub",(profile.full_name||"Petugas")+" · "+profile.role));
     const out=el("button","btn secondary","Keluar");out.onclick=async()=>{await db.auth.signOut();location.reload();};top.append(out);root.append(top);
-    const tabs=el("div","actions");const newsTab=el("button","btn","Kelola Berita");const umkmTab=el("button","btn secondary","Kelola UMKM");const agendaTab=el("button","btn secondary","Agenda & Pengumuman");tabs.append(newsTab,umkmTab);if(["admin","verifikator"].includes(profile.role))tabs.append(agendaTab);root.append(tabs);
+    const tabs=el("div","actions");const newsTab=el("button","btn","Kelola Berita");const umkmTab=el("button","btn secondary","Kelola UMKM");const agendaTab=el("button","btn secondary","Agenda & Pengumuman");tabs.append(newsTab,umkmTab);if(["admin","verifikator"].includes(profile.role))tabs.append(agendaTab);const auditTab=el("button","btn secondary","Audit Aktivitas");if(profile.role==="admin"||profile.role==="verifikator")tabs.append(auditTab);root.append(tabs);
     const work=el("div","");root.append(work);
     function showNews(){
       work.replaceChildren();const form=el("form","card");form.append(el("h3","","Tambah Berita Kelurahan"));
@@ -159,12 +159,40 @@
       }
       loadAgenda();loadAnnouncements();
     }
+    function showAudit(){
+      work.replaceChildren();
+      const list=el("div","card");list.append(el("h3","","Riwayat Aktivitas Pengelola"));
+      list.append(el("p","sub","Catatan otomatis untuk perubahan berita, UMKM, agenda, dan pengumuman. Data lama dan baru disimpan untuk keperluan pemeriksaan."));
+      const refresh=el("button","btn secondary","Muat Ulang");refresh.onclick=load;list.append(refresh);
+      const status=el("p","sub","Memuat riwayat…");list.append(status);work.append(list);
+      async function load(){
+        status.textContent="Memuat riwayat…";
+        const {data,error}=await db.from("admin_audit_log").select("id,actor_id,action,table_name,record_id,old_data,new_data,created_at").order("created_at",{ascending:false}).limit(100);
+        list.querySelectorAll(".bg-admin-row").forEach(n=>n.remove());
+        if(error){status.textContent="Tidak dapat memuat audit log: "+error.message;return;}
+        status.textContent=data.length+" aktivitas terakhir.";
+        (data||[]).forEach(x=>{
+          const row=el("div","bg-admin-row");
+          const when=new Date(x.created_at).toLocaleString("id-ID");
+          const actor=x.actor_id===null?"Sistem":x.actor_id;
+          const details=el("div","");
+          details.append(el("strong","",when+" · "+x.action.toUpperCase()+" · "+x.table_name));
+          details.append(el("p","sub","Aktor: "+actor+" | ID data: "+(x.record_id||"-")));
+          const toggle=el("button","btn secondary","Lihat perubahan");toggle.type="button";
+          const pre=el("pre","",JSON.stringify({sebelum:x.old_data,sesudah:x.new_data},null,2));pre.style.whiteSpace="pre-wrap";pre.style.overflowWrap="anywhere";pre.hidden=true;
+          toggle.onclick=()=>{pre.hidden=!pre.hidden;toggle.textContent=pre.hidden?"Lihat perubahan":"Sembunyikan perubahan";};
+          details.append(toggle,pre);row.append(details);list.append(row);
+        });
+      }
+      load();
+    }
     function activateTab(active){
       [newsTab,umkmTab,agendaTab].filter(Boolean).forEach(t=>t.className=t===active?"btn":"btn secondary");
     }
     newsTab.onclick=()=>{activateTab(newsTab);showNews();};
     umkmTab.onclick=()=>{activateTab(umkmTab);showUmkm();};
     if(agendaTab)agendaTab.onclick=()=>{activateTab(agendaTab);showAgenda();};
+    if(auditTab)auditTab.onclick=()=>{activateTab(auditTab);showAudit();};
     showNews();
   }
   db.auth.getSession().then(async({data})=>{if(!data.session)return;const {data:p}=await db.from("app_profiles").select("full_name,role").eq("id",data.session.user.id).single();if(p&&["admin","data_entry","verifikator"].includes(p.role))renderWorkspace(p);});
