@@ -265,6 +265,20 @@
           if(!window.XLSX){await new Promise((resolve,reject)=>{const s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";s.onload=resolve;s.onerror=reject;document.head.append(s);});}
           const bytes=await file.files[0].arrayBuffer();const wb=XLSX.read(bytes,{type:"array"});const raw=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:"",raw:false});
           if(!raw.length)throw new Error("Sheet pertama kosong.");
+          const selectedCategory=category.querySelector("select").value;
+          const rwKey=rwInput.value.trim().toLowerCase();
+          const existingKeys=new Set();
+          const tableByCategory={umkm:"umkm",fasilitas:"fasilitas_umum",demografi:"demografi_tahunan",lingkungan:"lingkungan_tahunan"};
+          const fieldsByCategory={umkm:"nama_usaha,kelompok_lokasi",fasilitas:"nama_publik,kelompok_lokasi,tahun",demografi:"tahun",lingkungan:"tahun"};
+          const {data:existing,error:existingError}=await db.from(tableByCategory[selectedCategory]).select(fieldsByCategory[selectedCategory]).limit(5000);
+          if(existingError)throw new Error("Tidak dapat memeriksa duplikasi pada database: "+existingError.message);
+          (existing||[]).forEach(x=>{
+            let k="";
+            if(selectedCategory==="umkm")k=String(x.nama_usaha||"").trim().toLowerCase()+"|"+String(x.kelompok_lokasi||"").trim().toLowerCase();
+            else if(selectedCategory==="fasilitas")k=String(x.nama_publik||"").trim().toLowerCase()+"|"+String(x.kelompok_lokasi||"").trim().toLowerCase()+"|"+String(x.tahun||"");
+            else k=String(x.tahun||"");
+            existingKeys.add(k);
+          });
           const seen=new Set();
           raw.forEach((r,i)=>{
             const clean={};Object.entries(r).forEach(([k,v])=>clean[String(k).trim().toLowerCase()]=typeof v==="string"?v.trim():v);
@@ -273,7 +287,21 @@
             const title=String(clean[titleKey[category.querySelector("select").value]]||"Baris "+(i+2));
             const key=category.querySelector("select").value+"|"+rw.querySelector("input").value.trim().toLowerCase()+"|"+title.toLowerCase();
             const duplicate=seen.has(key);seen.add(key);
-            const errors=[...(missing.length?["Kolom wajib kosong: "+missing.join(", ")]:[]),...(bad.length?["Angka tidak valid: "+bad.join(", ")]:[]),...(duplicate?["Duplikat dalam file"]:[])];
+            let dbDuplicate=false;
+            if(selectedCategory==="umkm")dbDuplicate=existingKeys.has(String(clean.nama_usaha||"").trim().toLowerCase()+"|"+rwKey);
+            else if(selectedCategory==="fasilitas")dbDuplicate=existingKeys.has(String(clean.nama_publik||"").trim().toLowerCase()+"|"+String(clean.kelompok_lokasi||rwInput.value).trim().toLowerCase()+"|"+String(clean.tahun||""));
+            else dbDuplicate=existingKeys.has(String(clean.tahun||""));
+            const numericNegative=Object.entries(clean).filter(([k,v])=>numeric.has(k)&&v!==""&&Number(v)<0).map(([k])=>k);
+            const yearValue=Number(clean.tahun);
+            const implausibleYear=clean.tahun!==""&&(!Number.isInteger(yearValue)||yearValue<1900||yearValue>new Date().getFullYear()+1);
+            const consistency=[];
+            if(selectedCategory==="demografi"){
+              const pop=Number(clean.jumlah_penduduk||0),gender=Number(clean.laki_laki||0)+Number(clean.perempuan||0);
+              const ages=Number(clean.usia_0_14||0)+Number(clean.usia_15_64||0)+Number(clean.usia_65_plus||0);
+              if(gender>pop&&pop>0)consistency.push("Jumlah laki-laki + perempuan melebihi jumlah penduduk");
+              if(ages>pop&&pop>0)consistency.push("Jumlah kelompok umur melebihi jumlah penduduk");
+            }
+            const errors=[...(missing.length?["Kolom wajib kosong: "+missing.join(", ")]:[]),...(bad.length?["Angka tidak valid: "+bad.join(", ")]:[]),...(numericNegative.length?["Nilai tidak boleh negatif: "+numericNegative.join(", ")]:[]),...(implausibleYear?["Tahun tidak wajar"]:[]),...consistency,...(duplicate?["Duplikat dalam file"]:[]),...(dbDuplicate?["Kemungkinan duplikat dengan data yang sudah ada di database"]:[])];
             const payload={};Object.entries(clean).forEach(([k,v])=>{if(v!=="")payload[k]=numeric.has(k)?Number(String(v).replace(",",".")):String(v);});
             report.push({row:i+2,title,errors});if(!errors.length)validRows.push({title,category:category.querySelector("select").value,source_rw:rw.querySelector("input").value.trim(),submitter_name:submitter.querySelector("input").value.trim(),submitter_note:source.querySelector("textarea").value.trim()||null,payload,status:"submitted"});
           });
